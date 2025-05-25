@@ -1,42 +1,52 @@
 import ElementUtils from "../../DocGuiLib/core/Element"
 import HandleGui from "../../DocGuiLib/core/Gui"
 import HandleRegisters from "../../DocGuiLib/listeners/Registers"
-import { UIRoundedRectangle, Window, UIText, CenterConstraint, CramSiblingConstraint, PixelConstraint, ScrollComponent } from "../../Elementa"
+import { UIRoundedRectangle, Window, UIText, UIWrappedText, CenterConstraint, CramSiblingConstraint, PixelConstraint, ScrollComponent, animate, Animations, ConstantColorConstraint } from "../../Elementa"
 import { CustomGui } from "../../DocGuiLib/core/CustomGui"
+import { SwitchElement, TextInputElement, SliderElement, DropdownElement, ColorPickerElement, KeybindElement, ButtonElement } from "./elements"
 
+/** @typedef {import('./elements').ElementConfig} ElementConfig */
+/** @typedef {'button'|'switch'|'textinput'|'slider'|'dropdown'|'colorpicker'|'keybind'} ElementType */
 export default class GUIBase {
-    /** 
-     * @param {string} moduleName - The module's name
-     * @param {string} schemePath - The color scheme path
-     * @param {string} title - The title that'll render in the GUI
+    /**
+     * @param {string} moduleName 
+     * @param {string} schemePath 
+     * @param {string} title 
      */
     constructor(moduleName, schemePath, title) {
         this.title = title
         this.colorscheme = FileLib.read(moduleName, schemePath) || FileLib.read("sin", "data/_defaultScheme.json")
         this.handler = new HandleGui()._setColorScheme(this.colorscheme)
-        this.handler.ctGui = new CustomGui()
-        this.handler.window = new Window()
-        this.handler.registers = new HandleRegisters(this.handler.ctGui, this.handler.window)
         this.scheme = JSON.parse(this.handler.getColorScheme())
-        this.onOpenGui = []
-        this.onCloseGui = []
         this.categories = []
-        this.activeCategory = null
-        this.currentContent = null
-        this.isInitialized = false
+        this.config = {}
+        this._initHandler()
         this.SinGUI = {
             background: {
                 width: 55,
                 leftRatio: 1,
                 rightRatio: 3,
                 height: 50,
-                margins: {
-                    x: 0,
-                    y: 15
+                margins: { 
+                    x: 0, 
+                    y: 15 
                 }
             }
         }
-        this.handler.ctGui.registerInit(() => Keyboard.enableRepeatEvents(true))
+        this.activeCategory = null
+        this.currentContent = null
+        this.activeElement = null
+        this.activePopupElement = null
+        this.isInitialized = false
+        this.onOpenGui = []
+        this.onCloseGui = []
+    }
+
+    /** @private */
+    _initHandler() {
+        this.handler.ctGui = new CustomGui()
+        this.handler.window = new Window()
+        this.handler.registers = new HandleRegisters(this.handler.ctGui, this.handler.window)
         const regs = this.handler.registers
         regs._stop = () => {
             if (regs.isCustom) return
@@ -45,32 +55,46 @@ export default class GUIBase {
             }
             regs.eventsList.clear()
         }
-        this._createGUI()
-        this.handler.registers.onOpen(() => this.onOpenGui.forEach(it => it()))
+        this.handler.ctGui.registerInit(() => Keyboard.enableRepeatEvents(true))
+        this.handler.registers.onOpen(() => this.onOpenGui.forEach(fn => fn()))
         this.handler.registers.onClose(() => {
-            this.onCloseGui.forEach(it => it())
+            this.onCloseGui.forEach(fn => fn())
             Keyboard.enableRepeatEvents(false)
         })
     }
+
     /** @private */
     _createGUI() {
         if (this.isInitialized) return
         this.isInitialized = true
-        const totalRatio = this.SinGUI.background.leftRatio + this.SinGUI.background.rightRatio
-        const leftWidthPercent = (this.SinGUI.background.leftRatio / totalRatio) * 100
-        const rightWidthPercent = (this.SinGUI.background.rightRatio / totalRatio) * 100
         
+        const totalRatio = this.SinGUI.background.leftRatio + this.SinGUI.background.rightRatio
+        const leftWidth = (this.SinGUI.background.leftRatio / totalRatio) * 100
+        const rightWidth = (this.SinGUI.background.rightRatio / totalRatio) * 100
+
         this.mainBlock = new UIRoundedRectangle(0)
-            .setX(new CenterConstraint())
-            .setY(new CenterConstraint())
+            .setX(new CenterConstraint()).setY(new CenterConstraint())
             .setWidth(this.SinGUI.background.width.percent())
             .setHeight(this.SinGUI.background.height.percent())
             .setColor(ElementUtils.getJavaColor([255, 255, 255, 0]))
             
+        this._createLeftPanel(leftWidth)
+        this._createRightPanel(leftWidth, rightWidth)
+        this._updateLeftPanel()
+        if (this.categories.length) this._switchCategory(this.categories[0].name)
+
+        this.handler.draw(this.mainBlock, false)
+    }
+
+    /**
+     * @private
+     * @param {number} leftWidth 
+     */
+    _createLeftPanel(leftWidth) {
         this.leftBlock = new UIRoundedRectangle(0)
             .setX((0).percent())
             .setY((0).percent())
-            .setWidth(leftWidthPercent.percent())
+            .setWidth(leftWidth.percent())
             .setHeight((100).percent())
             .setColor(ElementUtils.getJavaColor(this.scheme.Sin.background.panel.leftColor))
             .setChildOf(this.mainBlock)
@@ -78,7 +102,7 @@ export default class GUIBase {
         new UIText(this.title)
             .setX(new CenterConstraint())
             .setY((3).percent())
-            .setTextScale(new PixelConstraint(this.SinGUI.background.height * 0.04, true))
+            .setTextScale(new PixelConstraint(this.SinGUI.background.height * 0.03, true))
             .setChildOf(this.leftBlock)
             
         this.categoryScroll = new ScrollComponent()
@@ -95,30 +119,28 @@ export default class GUIBase {
             .setHeight(new PixelConstraint(this.categories.length * 40))
             .setColor(ElementUtils.getJavaColor([0, 0, 0, 0]))
             .setChildOf(this.categoryScroll)
-            
+    }
+
+    /**
+     * @private
+     * @param {number} leftWidth 
+     * @param {number} rightWidth 
+     */
+    _createRightPanel(leftWidth, rightWidth) {
         this.rightBlock = new UIRoundedRectangle(0)
-            .setX(leftWidthPercent.percent())
+            .setX(leftWidth.percent())
             .setY((0).percent())
-            .setWidth(rightWidthPercent.percent())
+            .setWidth(rightWidth.percent())
             .setHeight((100).percent())
             .setColor(ElementUtils.getJavaColor(this.scheme.Sin.background.panel.rightColor))
             .setChildOf(this.mainBlock)
             
         this.elementBox = new ScrollComponent()
-            .setX((5).percent())
-            .setY((5).percent())
-            .setWidth((90).percent())
-            .setHeight((90).percent())
+            .setX((5).percent()).setY((5).percent())
+            .setWidth((90).percent()).setHeight((90).percent())
             .setChildOf(this.rightBlock)
-
-        this._updateLeftPanel()
-        if (this.categories.length > 0) {
-            this.activeCategory = this.categories[0].name
-            this._updateRightPanel(this.activeCategory)
-        }
-
-        this.handler.draw(this.mainBlock, false)
     }
+
     /** @private */
     _updateLeftPanel() {
         this.categoryContent.clearChildren()
@@ -128,78 +150,121 @@ export default class GUIBase {
             const isActive = category.name === this.activeCategory
             const bgColor = isActive ? this.scheme.Sin.background.panel.activeCategoryColor : this.scheme.Sin.background.panel.leftColor
 
-            new UIRoundedRectangle(5)
+            const categoryButton = new UIRoundedRectangle(5)
                 .setX((5).percent())
-                .setY(new PixelConstraint(index * 40))
+                .setY(new PixelConstraint(index * 40 + 5))
                 .setWidth((90).percent())
                 .setHeight((35).pixels())
-                .setColor(ElementUtils.getJavaColor(bgColor))
+                .setColor(ElementUtils.getJavaColor([0, 0, 0, 0]))
                 .setChildOf(this.categoryContent)
                 .onMouseClick(() => this._switchCategory(category.name))
-                .addChildren(
-                    category.icon && new UIText(category.icon)
-                        .setX((5).percent())
-                        .setY(new CenterConstraint())
-                        .setTextScale(new PixelConstraint(1.8, false)),
-                    new UIText(category.name)
-                        .setX(category.icon ? (15).percent() : (10).percent())
-                        .setY(new CenterConstraint())
-                        .setTextScale(new PixelConstraint(1.5, false))
-                        .setColor(ElementUtils.getJavaColor(isActive ? this.scheme.Sin.accent : this.scheme.Sin.text))
-                )
+                
+            const bgComponent = new UIRoundedRectangle(5)
+                .setX((0).percent())
+                .setY((0).percent())
+                .setWidth((100).percent())
+                .setHeight((100).percent())
+                .setColor(ElementUtils.getJavaColor(bgColor))
+                .setChildOf(categoryButton)
+                
+            this._setupButtonHover(bgComponent, bgColor)
+            this._createCategoryText(categoryButton, category.name, isActive)
         })
     }
-    /** @private */
+
+    /**
+     * @private
+     * @param {UIRoundedRectangle} bgComponent 
+     * @param {number[]} originalColor 
+     */
+    _setupButtonHover(bgComponent, originalColor) {
+        const hoverColor = this.scheme.Sin.accent2
+        bgComponent.onMouseEnter(() => this._animateColor(bgComponent, hoverColor))
+                .onMouseLeave(() => this._animateColor(bgComponent, originalColor))
+    }
+
+    /**
+     * @private
+     * @param {UIRoundedRectangle} element 
+     * @param {number[]} targetColor 
+     */
+    _animateColor(element, targetColor) {
+        animate(element, animation => 
+            animation.setColorAnimation(Animations.OUT_EXP, 0.2, new ConstantColorConstraint(ElementUtils.getJavaColor(targetColor)))
+        )
+    }
+
+    /**
+     * @private
+     * @param {UIRoundedRectangle} parent 
+     * @param {string} text 
+     * @param {boolean} isActive 
+     */
+    _createCategoryText(parent, text, isActive) {
+        new UIWrappedText(text, true, null, true, true)
+            .setX((0).percent())
+            .setY(new CenterConstraint())
+            .setWidth((100).percent())
+            .setTextScale((1.3).pixels())
+            .setColor(ElementUtils.getJavaColor(isActive ? this.scheme.Sin.accent : this.scheme.Sin.element.text))
+            .setChildOf(parent)
+    }
+
+    /**
+     * @private
+     * @param {string} categoryName 
+     */
     _updateRightPanel(categoryName) {
-        if (this.currentContent) {
-            const parent = this.currentContent.getParent()
-            if (parent) parent.removeChild(this.currentContent)
-            this.currentContent = null
-        }
+        this.currentContent?.getParent()?.removeChild(this.currentContent)
+        this.currentContent = null
+        
         const category = this.categories.find(c => c.name === categoryName)
         if (!category) return
-        const scrollContent = this.elementBox || new UIRoundedRectangle(0)
-            .setWidth((100).percent())
-            .setHeight((100).percent())
-
+        
         this.currentContent = new UIRoundedRectangle(0)
             .setX((0).percent())
             .setY((0).percent())
             .setWidth((100).percent())
             .setHeight(new PixelConstraint(Math.ceil(category.elements.length / 3) * 92))
             .setColor(ElementUtils.getJavaColor([0, 0, 0, 0]))
-            .setChildOf(scrollContent)
-        if (!this.elementBox) this.elementBox.setContent(scrollContent)
+            .setChildOf(this.elementBox)
 
-        category.elements.forEach(element => {
-            new UIRoundedRectangle(5)
-                .setX(new CramSiblingConstraint(15))
-                .setY(new CramSiblingConstraint(15))
-                .setWidth((30).percent())
-                .setHeight((80).pixels())
-                .setColor(ElementUtils.getJavaColor(this.scheme.Sin.element.color))
-                .setChildOf(this.currentContent)
-                .onMouseClick(() => this._createElementPopup(element))
-                .addChildren(
-                    new UIRoundedRectangle(0)
-                        .setX((0).percent())
-                        .setY((70).percent())
-                        .setWidth((100).percent())
-                        .setHeight((5).percent())
-                        .setColor(ElementUtils.getJavaColor(this.scheme.Sin.element.divider)),
-                    new UIText(element.icon)
-                        .setX(new CenterConstraint())
-                        .setY((25).percent())
-                        .setTextScale(new PixelConstraint(3.0, false)),
-                    new UIText(element.text)
-                        .setX(new CenterConstraint())
-                        .setY((80).percent())
-                        .setColor(ElementUtils.getJavaColor(this.scheme.Sin.accent))
-                )
-        })
+        category.elements.forEach(element => 
+            this._createElementCard(element).setChildOf(this.currentContent)
+        )
     }
-    /** @private */
+
+    /**
+     * @private
+     * @param {object} element 
+     * @returns {UIRoundedRectangle}
+     */
+    _createElementCard(element) {
+        const card = new UIRoundedRectangle(5)
+            .setX(new CramSiblingConstraint(15))
+            .setY(new CramSiblingConstraint(15))
+            .setWidth((30).percent())
+            .setHeight((80).pixels())
+            .setColor(ElementUtils.getJavaColor(this.scheme.Sin.element.color))
+            .onMouseClick(() => this._createElementPopup(element))
+            .onMouseEnter(() => this._animateColor(card, this.scheme.Sin.element.hoverColor))
+            .onMouseLeave(() => this._animateColor(card, this.scheme.Sin.element.color))
+
+        new UIWrappedText(element.name, true, null, true, true)
+            .setX(new CenterConstraint()).setY(new CenterConstraint())
+            .setWidth((90).percent()).setTextScale(1.5.pixels())
+            .setColor(ElementUtils.getJavaColor(this.scheme.Sin.accent))
+            .setChildOf(card)
+
+        return card
+    }
+
+    /**
+     * @private
+     * @param {object} element 
+     */
     _createElementPopup(element) {
+        this.activeElement = element
         const overlay = new UIRoundedRectangle(0)
             .setX((0).percent())
             .setY((0).percent())
@@ -209,119 +274,310 @@ export default class GUIBase {
             .setChildOf(this.rightBlock)
 
         const popupMain = new UIRoundedRectangle(5)
-            .setX(new CenterConstraint())
-            .setY(new CenterConstraint())
-            .setWidth((90).percent())
-            .setHeight((90).percent())
+            .setX(new CenterConstraint()).setY(new CenterConstraint())
+            .setWidth((90).percent()).setHeight((90).percent())
             .setColor(ElementUtils.getJavaColor(this.scheme.Sin.element.popUp.menu))
             .setChildOf(overlay)
-            .addChildren(
-                new UIRoundedRectangle(5)
-                    .setX(new CenterConstraint())
-                    .setY((0).percent())
-                    .setWidth((100).percent())
-                    .setHeight((13).percent())
-                    .setColor(ElementUtils.getJavaColor(this.scheme.Sin.element.divider)),
-                new UIRoundedRectangle(0)
-                    .setX(new CenterConstraint())
-                    .setY((12).percent())
-                    .setWidth((100).percent())
-                    .setHeight((2.5).percent())
-                    .setColor(ElementUtils.getJavaColor(this.scheme.Sin.element.divider)),
-                new UIText(element.text)
-                    .setX(new CenterConstraint())
-                    .setY((4).percent())
-                    .setTextScale(new PixelConstraint(2.0, false)),
-                new ScrollComponent()
-                    .setX((5).percent())
-                    .setY((15).percent())
-                    .setWidth((90).percent())
-                    .setHeight((80).percent())
-                    .addChildren(
-                        new UIRoundedRectangle(0)
-                            .setWidth((100).percent())
-                            .setHeight(new PixelConstraint(element.subElements.length * 35))
-                            .setColor(ElementUtils.getJavaColor([0, 0, 0, 0]))
-                            .addChildren(
-                                ...element.subElements.map((subElem, index) =>
-                                    new UIRoundedRectangle(3)
-                                        .setX((5).percent())
-                                        .setY(new PixelConstraint(index * 35))
-                                        .setWidth((90).percent())
-                                        .setHeight((30).pixels())
-                                        .setColor(ElementUtils.getJavaColor([0, 0, 0, 0]))
-                                        .addChildren(
-                                            new UIText(subElem.icon)
-                                                .setX((2).percent())
-                                                .setY(new CenterConstraint()),
-                                            new UIText(subElem.text)
-                                                .setX((12).percent())
-                                                .setY(new CenterConstraint())
-                                        )
-                                )
-                            )
-                    ),
-                new UIText("[✕]")
-                    .setX((90).percent())
-                    .setY((12).pixels())
-                    .setTextScale((1.5).pixels())
-                    .setColor(ElementUtils.getJavaColor(this.scheme.Sin.accent))
-                    .onMouseClick(() => {
-                        if (overlay.getParent()) {
-                            overlay.getParent().removeChild(overlay)
-                        }
-                    })
-            )
+            
+        this._createPopupHeader(popupMain, element)
+        this._createPopupContent(popupMain, element)
+        this._createCloseButton(popupMain, overlay)
 
-        return overlay
+        this.activePopupElement = overlay
     }
-    /** @private */
-    _switchCategory(categoryName) {
-        const popups = this.rightBlock.getChildren().filter(child => child instanceof UIRoundedRectangle)
-        popups.forEach(popup => popup.getParent()?.removeChild(popup))
+
+    /**
+     * @private
+     * @param {UIRoundedRectangle} parent 
+     * @param {object} element 
+     */
+    _createPopupHeader(parent, element) {
+        new UIRoundedRectangle(5)
+            .setX(new CenterConstraint())
+            .setY((0).percent())
+            .setWidth((100).percent())
+            .setHeight((13).percent())
+            .setColor(ElementUtils.getJavaColor(this.scheme.Sin.element.color))
+            .setChildOf(parent)
+
+        new UIWrappedText(element.name, true, null, true, false)
+            .setX(new CenterConstraint())
+            .setY((4).percent())
+            .setWidth((100).percent())
+            .setTextScale((2.0).pixels())
+            .setChildOf(parent)
+    }
+
+    /**
+     * @private
+     * @param {UIRoundedRectangle} parent 
+     * @param {object} element 
+     */
+    _createPopupContent(parent, element) {
+        const scroll = new ScrollComponent()
+            .setX((5).percent())
+            .setY((15).percent())
+            .setWidth((90).percent())
+            .setHeight((80).percent())
+            .setChildOf(parent)
+
+        const content = new UIRoundedRectangle(0)
+            .setWidth((100).percent())
+            .setHeight(new PixelConstraint(element.subElements.filter(e => !e.shouldShow || e.shouldShow(this.config)).length * 35))
+            .setColor(ElementUtils.getJavaColor([0, 0, 0, 0]))
+            .setChildOf(scroll)
+
+        element.subElements.forEach((subElem, index) => {
+            if (subElem.shouldShow && !subElem.shouldShow(this.config)) return
+            
+            const container = new UIRoundedRectangle(3)
+                .setX((0).percent())
+                .setY(new PixelConstraint(index * 45))
+                .setWidth((100).percent())
+                .setHeight((50).pixels())
+                .setColor(ElementUtils.getJavaColor([0, 0, 0, 0]))
+                .setChildOf(content)
+
+            this._createSubElement(subElem, container)
+        })
+    }
+
+    /**
+     * @private
+     * @param {object} subElem 
+     * @param {UIRoundedRectangle} container 
+     */
+    _createSubElement(subElem, container) {
+        if (subElem.title) this._createSubElementTitle(subElem, container)
+        if (subElem.description) this._createSubElementDescription(subElem, container)
         
+        const component = this._createComponent(subElem)
+        component.create()
+            .setX((0).percent())
+            .setY(new CenterConstraint())
+            .setWidth((20).percent())
+            .setHeight((20).pixels())
+            .setChildOf(container)
+    }
+
+    /**
+     * @private
+     * @param {object} subElem 
+     * @param {UIRoundedRectangle} container 
+     */
+    _createSubElementTitle(subElem, container) {
+        new UIText(subElem.title)
+            .setX(new CenterConstraint())
+            .setY((2).percent())
+            .setTextScale(1.2.pixels())
+            .setColor(ElementUtils.getJavaColor(this.scheme.Sin.accent))
+            .setChildOf(container)
+    }
+
+    /**
+     * @private
+     * @param {object} subElem 
+     * @param {UIRoundedRectangle} container 
+     */
+    _createSubElementDescription(subElem, container) {
+        new UIWrappedText(subElem.description, true, null, false, false, 10)
+            .setX((25).percent())
+            .setY(new CenterConstraint())
+            .setWidth((75).percent())
+            .setTextScale((1.0).pixels())
+            .setColor(ElementUtils.getJavaColor(this.scheme.Sin.accent2))
+            .setChildOf(container)
+    }
+
+    /**
+     * @private
+     * @param {object} subElem 
+     * @returns {SwitchElement|TextInputElement|SliderElement|DropdownElement|ColorPickerElement|KeybindElement|ButtonElement}
+     */
+    _createComponent(subElem) {
+        const currentValue = this.config[subElem.configName] ?? subElem.value
+        const componentMap = {
+            button: () => new ButtonElement(subElem.title)
+                .setColorScheme(this.scheme)
+                .on('click', () => this._triggerEvent(subElem.onClick)),
+            switch: () => new SwitchElement(currentValue)
+                .setColorScheme(this.scheme)
+                .on('change', val => this._updateConfig(subElem.configName, val)),
+            textinput: () => new TextInputElement(currentValue, subElem.placeHolder)
+                .setColorScheme(this.scheme)
+                .on('change', val => this.config[subElem.configName] = val),
+            slider: () => new SliderElement(subElem.options[0], subElem.options[1], currentValue)
+                .setColorScheme(this.scheme)
+                .on('change', val => this.config[subElem.configName] = val),
+            dropdown: () => new DropdownElement(subElem.options, currentValue)
+                .setColorScheme(this.scheme)
+                .on('change', val => this.config[subElem.configName] = val),
+            colorpicker: () => new ColorPickerElement(currentValue)
+                .setColorScheme(this.scheme)
+                .on('change', val => this.config[subElem.configName] = val),
+            keybind: () => new KeybindElement(currentValue)
+                .setColorScheme(this.scheme)
+                .on('change', val => this.config[subElem.configName] = val)
+        }
+
+        return componentMap[subElem.type]()
+    }
+
+    /**
+     * @private
+     * @param {string} key 
+     * @param {any} value 
+     */
+    _updateConfig(key, value) {
+        this.config[key] = value
+        this._refreshPopup()
+    }
+
+    /**
+     * @private
+     * @param {UIRoundedRectangle} parent 
+     * @param {UIRoundedRectangle} overlay 
+     */
+    _createCloseButton(parent, overlay) {
+        const closeBtn = new UIText("[✕]")
+            .setX((90).percent()).setY((12).pixels())
+            .setTextScale(1.5.pixels())
+            .setColor(ElementUtils.getJavaColor(this.scheme.Sin.element.closeButton.normal))
+            .setChildOf(parent)
+            .onMouseClick(() => overlay.getParent().removeChild(overlay))
+            .onMouseEnter(() => this._animateColor(closeBtn, this.scheme.Sin.element.closeButton.hover))
+            .onMouseLeave(() => this._animateColor(closeBtn, this.scheme.Sin.element.closeButton.normal))
+    }
+
+    /** @private */
+    _refreshPopup() {
+        this.activePopupElement?.getParent()?.removeChild(this.activePopupElement)
+        this._createElementPopup(this.activeElement)
+    }
+    
+    /**
+     * @private
+     * @param {Function} event 
+     */
+    _triggerEvent(event) {
+        typeof event === "function" && event(this.config, this)
+    }
+
+    /**
+     * @private
+     * @param {string} categoryName 
+     */
+    _switchCategory(categoryName) {
         this.activeCategory = categoryName
+        this.rightBlock.getChildren()
+            .filter(child => child instanceof UIRoundedRectangle)
+            .forEach(popup => popup.getParent()?.removeChild(popup))
+            
         this._updateLeftPanel()
         this._updateRightPanel(categoryName)
     }
+
     /**
-     * Adds a category
-     * @param {string} name - The category name
-     * @param {string} icon - The icon of the category
-     * @returns this for chaining 
+     * @private
+     * @param {ElementType} type 
+     * @param {ElementConfig} config 
+     * @returns {this}
      */
-    addCategory(name, icon = "") {
-        this.categories.push({ name, icon, elements: [] })
-        if (!this.activeCategory) this.activeCategory = name
-        if (this.isInitialized) {
-            this._updateLeftPanel()
-            this._updateRightPanel(this.activeCategory)
-        }
+    _addElement(type, config) {
+        const { category, subcategory } = config
+        let categoryObj = this.categories.find(c => c.name === category) || this._createCategory(category)
+        let subcategoryObj = categoryObj.elements.find(e => e.name === subcategory) || this._createSubcategory(categoryObj, subcategory)
         
+        subcategoryObj.subElements.push({ type, ...config })
+        if (this.activeCategory === category && this.isInitialized) this._updateRightPanel(category)
         return this
     }
+
     /**
-     * Adds an element to the category
-     * @param {string} categoryName - The category to add the element to
-     * @param {string} element - The element
-     * @returns this for chaining
+     * @private
+     * @param {string} name 
+     * @returns {object}
      */
-    pushElement(categoryName, element) {
-        const category = this.categories.find(c => c.name === categoryName)
-        if (!category) {
-            console.warn(`Category "${categoryName}" not found!`)
-            return this
-        }
-        category.elements.push(element)
-        if (this.activeCategory === categoryName && this.isInitialized) this._updateRightPanel(categoryName)
-        return this
+    _createCategory(name) {
+        const newCategory = { name, elements: [] }
+        this.categories.push(newCategory)
+        return newCategory
     }
+
+    /**
+     * @private
+     * @param {object} category 
+     * @param {string} name 
+     * @returns {object}
+     */
+    _createSubcategory(category, name) {
+        const newSubcategory = { name, elements: [], subElements: [] }
+        category.elements.push(newSubcategory)
+        return newSubcategory
+    }
+
+    /** 
+     * @param {ElementConfig} config 
+     * @returns this for chaining
+     */ 
+    addButton(config) {
+        return this._addElement('button', config)
+    }
+
+    /** 
+     * @param {ElementConfig} config 
+     * @returns this for chaining
+     */ 
+    addSwitch(config) {
+        return this._addElement('switch', config)
+    }
+    
+    /** 
+     * @param {ElementConfig} config 
+     * @returns this for chaining
+     */ 
+    addTextInput(config) {
+        return this._addElement('textinput', config)
+    }
+
+    /** 
+     * @param {ElementConfig} config 
+     * @returns this for chaining
+     */ 
+    addSlider(config) {
+        return this._addElement('slider', config)
+    }
+
+    /** 
+     * @param {ElementConfig} config 
+     * @returns this for chaining
+     */ 
+    addDropDown(config) {
+        return this._addElement('dropdown', config)
+    }
+
+    /** 
+     * @param {ElementConfig} config 
+     * @returns this for chaining
+     */ 
+    addColorPicker(config) {
+        return this._addElement('colorpicker', config)
+    }
+    
+    /** 
+     * @param {ElementConfig} config 
+     * @returns this for chaining
+     */ 
+    addKeybind(config) {
+        return this._addElement('keybind', config)
+    }
+
     /**
      * Opens the GUI
      * @returns this for chaining
      */
     openGui() {
-        if (!this.isInitialized) this._createGUI()
+        !this.isInitialized && this._createGUI()
         this.handler.ctGui.open()
         return this
     }
@@ -333,53 +589,60 @@ export default class GUIBase {
         this.handler.ctGui.close()
         return this
     }
+
     /**
-     * @param {*} function to call on GUI Open
+     * Runs the given func on GUI open
+     * @param {Function} fn 
      * @returns this for chaining
      */
     onOpen(fn) {
         this.onOpenGui.push(fn)
         return this
     }
+
     /**
-     * @param {*} function to call on GUI Close 
+     * Runs the given func on GUI close
+     * @param {Function} fn 
      * @returns this for chaining
      */
     onClose(fn) {
         this.onCloseGui.push(fn)
         return this
     }
+
     /**
-     * Sets the size of the GUI
-     * @param {number} width 
-     * @param {number} height 
+     * Sets the GUI size
+     * @param {number} [width]
+     * @param {number} [height]
      * @returns this for chaining
      */
     setSize(width, height) {
-        if (width) this.SinGUI.background.width = width
-        if (height) this.SinGUI.background.height = height
+        width && (this.SinGUI.background.width = width)
+        height && (this.SinGUI.background.height = height)
         return this
     }
+
     /**
-     * Sets the position of the GUI
-     * @param {number} x 
-     * @param {number} y 
+     * Sets the GUI pos
+     * @param {number} [x]
+     * @param {number} [y]
      * @returns this for chaining
      */
     setPos(x, y) {
-        if (x) this.SinGUI.background.margins.x = x
-        if (y) this.SinGUI.background.margins.y = y
+        x && (this.SinGUI.background.margins.x = x)
+        y && (this.SinGUI.background.margins.y = y)
         return this
     }
+
     /**
-     * Sets the ratio of the GUI
-     * @param {number} leftRatio
-     * @param {number} rightRatio
+     * Sets the GUI ratio
+     * @param {number} [left]
+     * @param {number} [right]
      * @returns this for chaining
      */
     setRatio(left, right) {
-        if (left) this.SinGUI.background.leftRatio = left
-        if (right) this.SinGUI.background.rightRatio = right
+        left && (this.SinGUI.background.leftRatio = left)
+        right && (this.SinGUI.background.rightRatio = right)
         return this
     }
 }
