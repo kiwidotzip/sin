@@ -1,6 +1,11 @@
-import { Animations, CenterConstraint, AdditiveConstraint, PixelConstraint, GradientComponent, OutlineEffect, RelativeConstraint, SubtractiveConstraint, ScrollComponent, UIRoundedRectangle, UIText, UITextInput, animate, AspectConstraint, ConstantColorConstraint } from "../../Elementa"
+import { Animations, CenterConstraint, CramSiblingConstraint, PixelConstraint, GradientComponent, UIBlock, AdditiveConstraint, RelativeConstraint, SubtractiveConstraint, ScrollComponent, UIRoundedRectangle, UIText, UITextInput, animate, AspectConstraint, ConstantColorConstraint } from "../../Elementa"
 import ElementUtils from "../../DocGuiLib/core/Element"
 const Color = java.awt.Color
+
+// Color picker dependencies
+const UMatrixStack = Java.type("gg.essential.universal.UMatrixStack")
+const UGraphics = Java.type("gg.essential.universal.UGraphics")
+const hueColors = new Array(50).fill(null).map((_, idx) => new Color(Color.HSBtoRGB(idx / 50, 1, 0.7)))
 
 /**
  * Base class for all UI elements providing common functionality
@@ -106,7 +111,7 @@ export class SwitchElement extends BaseElement {
             this.isOn = !this.isOn
             handle.setColor(this.isOn ? this._getColor('switch.onColor') : this._getColor('switch.offColor'))
             this._trigger('change', this.isOn)
-            animate(handle, animation => animation.setXAnimation(Animations.OUT_EXP, 0.5, this.isOn ? (70).percent() : (2).percent()))
+            animate(handle, animation => animation.setXAnimation(Animations.OUT_EXP, 0.5, this.isOn ? (70).percent() : (3).percent()))
         })
         return bg
     }
@@ -253,17 +258,23 @@ export class SliderElement extends BaseElement {
      */
     create() {
         const bg = new UIRoundedRectangle(this._getValue('base.roundness'))
-            .setX(this.x.percent()).setY(this.y.percent()).setWidth(this.width.percent()).setHeight(this.height.percent())
+            .setX(this.x.percent())
+            .setY(this.y.percent())
+            .setWidth(this.width.percent())
+            .setHeight(this.height.percent())
             .setColor(this._getColor('slider.track'))
 
         const initialPercent = (this.value - this.min) / (this.max - this.min)
         const thumb = new UIRoundedRectangle(this._getValue('base.roundness'))
-            .setX(this._getThumbConstraint(initialPercent)).setY(new CenterConstraint())
-            .setWidth((this.thumbWidth).pixel()).setHeight((80).percent())
+            .setX(this._getThumbConstraint(initialPercent))
+            .setY(new CenterConstraint())
+            .setWidth((this.thumbWidth).pixel())
+            .setHeight((80).percent())
             .setColor(this._getColor('slider.thumb')).setChildOf(bg)
 
         const valueText = new UIText(this.value.toString())
-            .setX(new CenterConstraint()).setY(new CenterConstraint())
+            .setX(new CenterConstraint())
+            .setY(new CenterConstraint())
             .setTextScale((this._getValue('text.scale') || 1).pixels())
             .setColor(this._getColor('slider.valueText') || this._getColor('text.color'))
             .setChildOf(thumb)
@@ -352,19 +363,28 @@ export class TextInputElement extends BaseElement {
     create() {
         const tx = this.colorScheme.element.textInput
         const bg = new UIRoundedRectangle(tx.roundness)
-            .setX(this.x.percent()).setY(this.y.percent()).setWidth(this.width.percent()).setHeight(this.height.percent())
+            .setX(this.x.percent())
+            .setY(this.y.percent())
+            .setWidth(this.width.percent())
+            .setHeight(this.height.percent())
             .setColor(this._getColor('textInput.normal.background'))
 
         const input = new UITextInput(this.value ?? "", true)
-            .setX((10).percent()).setY(new CenterConstraint()).setWidth((100).percent()).setHeight((10).pixels())
-            .setColor(this._getColor('textInput.normal.text')).setChildOf(bg)
+            .setX((10).percent())
+            .setY(new CenterConstraint())
+            .setWidth((100).percent())
+            .setHeight((10).pixels())
+            .setColor(this._getColor('textInput.normal.text'))
+            .setChildOf(bg)
 
         bg.onMouseClick(() => input.grabWindowFocus())
 
         if (this.placeholder) {
             const placeholderText = new UIText(this.placeholder)
-                .setX(new CenterConstraint()).setY(new CenterConstraint())
-                .setColor(this._getColor('textInput.placeholder')).setChildOf(bg)
+                .setX(new CenterConstraint())
+                .setY(new CenterConstraint())
+                .setColor(this._getColor('textInput.placeholder'))
+                .setChildOf(bg)
             
             this.value === "" ? placeholderText.unhide() : placeholderText.hide()
 
@@ -399,7 +419,6 @@ export class ButtonElement extends BaseElement {
      */
     create() {
         const btn = this.colorScheme.element.button
-        ChatLib.chat(JSON.stringify(this, null, 4))
         
         this.bg = new UIRoundedRectangle(btn.roundness)
             .setX((this.x).percent()).setY((this.y).percent())
@@ -422,68 +441,272 @@ export class ButtonElement extends BaseElement {
     }
 }
 
+
 /**
- * Color picker element for selecting RGBA colors
+ * Color picker element for selecting colors with HSB and alpha support
  * @class ColorPickerElement
  * @extends BaseElement
  * @fires change - When color changes, passes [r, g, b, a] array
  */
 export class ColorPickerElement extends BaseElement {
-    /**
-     * Creates a new ColorPickerElement
-     * @param {number[]} [color=[255, 255, 255]] - Initial color as [r, g, b] or [r, g, b, a]
-     */
-    constructor(color = [255, 255, 255]) {
-        super(0, 0, 0, 0, color, null, 'ColorPicker')
-        Object.assign(this, { hue: 0, saturation: 1, brightness: 1 })
+    constructor(x, y, width, height, color = [255, 255, 255, 255]) {
+        super(0, 0, 0, 0, color, null, 'ColorPicker', null)
+        this.selectedColor = color
+        this.isOpen = false
+        this._initColorState(color)
     }
 
-    /**
-     * Creates and returns the UI component for this color picker
-     * @returns {UIRoundedRectangle} The main color picker background component
-     */
+    /** @private */
+    _initColorState(color) {
+        const [r, g, b, a] = color
+        this.currentColor = new Color(r/255, g/255, b/255, (a ?? 255)/255)
+        this.hsb = Color.RGBtoHSB(r, g, b, null)
+        this.hue = this.hsb[0]
+        this.saturation = this.hsb[1]
+        this.brightness = this.hsb[2]
+        this.alpha = this.currentColor.getAlpha()/255
+    }
+
     create() {
-        const bg = new UIRoundedRectangle(this._getValue('base.roundness'))
-            .setX(this.x.percent()).setY(this.y.percent()).setWidth(this.width.percent()).setHeight(this.height.percent())
-            .setColor(this._getColor('colorPicker.background'))
-
-        const hueBar = new GradientComponent()
-            .setX((5).percent()).setY((5).percent()).setWidth((90).percent()).setHeight((15).percent())
-            .setStartColor(this._getColor('colorPicker.hueBackground')).setEndColor(Color.WHITE)
-            .setChildOf(bg)
-
-        const svArea = new UIRoundedRectangle(this._getValue('base.roundness'))
-            .setX((5).percent()).setY((25).percent()).setWidth((90).percent()).setHeight((65).percent())
-            .setColor(this._getColor('colorPicker.svBackground')).setChildOf(bg)
-
-        const preview = new UIRoundedRectangle(this._getValue('base.roundness'))
-            .setX((80).percent()).setY((5).percent()).setWidth((15).percent()).setHeight((15).percent())
-            .setColor(ElementUtils.getJavaColor(this.value)).setChildOf(bg)
-
-        hueBar.onMouseDrag((comp, mx) => {
-            this.hue = (mx - comp.getLeft()) / comp.getWidth()
-            this._updateColor(preview)
-        })
-
-        svArea.onMouseDrag((comp, mx, my) => {
-            this.saturation = (mx - comp.getLeft()) / comp.getWidth()
-            this.brightness = 1 - ((my - comp.getTop()) / comp.getHeight())
-            this._updateColor(preview)
-        })
-
-        return bg
+        this.previewBtn = this._createPreviewButton()
+        return this.previewBtn
     }
 
-    /**
-     * Updates the color based on HSB values and triggers change event
-     * @param {UIRoundedRectangle} [preview] - Preview component to update
-     */
-    _updateColor(preview) {
-        const j = Color.HSBtoRGB(this.hue, this.saturation, this.brightness)
-        const rgb = ElementUtils.getJavaColor(...j, 255)
-        this.value = [rgb.getRed(), rgb.getGreen(), rgb.getBlue(), rgb.getAlpha()]
-        preview.setColor(ElementUtils.getJavaColor(this.value))
-        this._trigger('change', this.value)
+    /** @private */
+    _createPreviewButton() {
+        const btn = new UIRoundedRectangle(this._getValue('base.roundness'))
+            .setWidth(this.width.percent())
+            .setHeight(this.height.percent())
+            .setColor(this._getColor('button.background'))
+            .onMouseClick(() => this._togglePicker())
+
+        this.preview = new UIRoundedRectangle(this._getValue('base.roundness'))
+            .setWidth((80).percent())
+            .setHeight((70).percent())
+            .setColor(this.currentColor)
+            .setX(new CenterConstraint())
+            .setY(new CenterConstraint())
+            .setChildOf(btn)
+
+        new UIText("Pick")
+            .setX(new CenterConstraint())
+            .setY(new AdditiveConstraint(new CenterConstraint(), (5).pixels()))
+            .setColor(this._getColor('button.text'))
+            .setChildOf(btn)
+
+        return btn
+    }
+
+    /** @private */
+    _togglePicker() {
+        if (this.isOpen) return this._closePicker()
+        this._openPicker()
+    }
+
+    /** @private */
+    _openPicker() {
+        this.overlay = new UIBlock(new Color(0/255, 0/255, 0/255, 150/255))
+            .setWidth((100).percent())
+            .setHeight((100).percent())
+
+        this.popup = new UIRoundedRectangle(5)
+            .setWidth((300).pixels())
+            .setHeight((250).pixels())
+            .setX(new CenterConstraint())
+            .setY(new CenterConstraint())
+            .setColor(this._getColor('colorPicker.background'))
+            .setChildOf(this.overlay)
+
+        this._createPickerComponents()
+        this._setupPickerEvents()
+        this.overlay.setChildOf(this.container.getWindow().getChildren()[0])
+        this.isOpen = true
+    }
+
+    /** @private */
+    _createPickerComponents() {
+        this.gradient = this._createHueGradient()
+            .setX((5).percent())
+            .setY((5).percent())
+            .setWidth((70).percent())
+            .setHeight((70).percent())
+            .setChildOf(this.popup)
+
+        this.svArea = new UIRoundedRectangle(5)
+            .setX((5).percent())
+            .setY((5).percent())
+            .setWidth((70).percent())
+            .setHeight((70).percent())
+            .setColor(Color.WHITE)
+            .setChildOf(this.popup)
+
+        this.pointer = new UIRoundedRectangle(2)
+            .setWidth((3).pixels())
+            .setHeight((3).pixels())
+            .setColor(Color.BLACK)
+            .setChildOf(this.svArea)
+
+        this.hueStrip = new UIBlock()
+            .setX(new CramSiblingConstraint(5))
+            .setY((5).percent())
+            .setWidth((15).pixels())
+            .setHeight((70).percent())
+            .setChildOf(this.popup)
+
+        hueColors.forEach((color, i) => {
+            new UIBlock(color)
+                .setY(new RelativeConstraint(i / hueColors.length))
+                .setWidth((100).percent())
+                .setHeight((2).pixels())
+                .setChildOf(this.hueStrip)
+        })
+        
+        this.alphaBg = new UIBlock()
+            .setX((5).percent())
+            .setY((80).percent())
+            .setWidth((70).percent())
+            .setHeight((8).pixels())
+            .setColor(this._getColor('colorPicker.alphaSlider.track'))
+            .setChildOf(this.popup)
+
+        this.alphaGradient = new GradientComponent()
+            .setWidth((100).percent())
+            .setHeight((100).percent())
+            .setStartColor(new Color(255/255, 255/255, 255/255, 0/255))
+            .setEndColor(Color.WHITE)
+            .setChildOf(this.alphaBg)
+
+        this.alphaThumb = new UIRoundedRectangle(2)
+            .setWidth((6).pixels())
+            .setHeight((10).pixels())
+            .setColor(this._getColor('colorPicker.alphaSlider.thumb'))
+            .setChildOf(this.alphaBg)
+
+        this.pickerPreview = new UIRoundedRectangle(5)
+            .setX((80).percent())
+            .setY((5).percent())
+            .setWidth((15).percent())
+            .setHeight((15).percent())
+            .setColor(this.currentColor)
+            .setChildOf(this.popup)
+
+        new UIText("×")
+            .setX(new SubtractiveConstraint((100).percent(), (15).pixels()))
+            .setY((5).pixels())
+            .setTextScale((1.5).pixels())
+            .setColor(this._getColor('button.text'))
+            .onMouseClick(() => this._closePicker())
+            .setChildOf(this.popup)
+    }
+
+    /** @private */
+    _setupPickerEvents() {
+        // SV Area interactions
+        this.svArea.onMouseClick((_, e) => this._updateSV(e.relativeX, e.relativeY))
+            .onMouseDrag((_, x, y) => this._updateSV(x, y))
+
+        // Hue Strip interactions
+        this.hueStrip.onMouseClick((_, e) => this._updateHue(e.relativeY))
+            .onMouseDrag((_, x, y) => this._updateHue(y))
+
+        // Alpha interactions
+        this.alphaBg.onMouseClick((_, e) => this._updateAlpha(e.relativeX))
+            .onMouseDrag((_, x, y) => this._updateAlpha(x))
+
+        // Keyboard listener
+        register('guiKey', (char, key) => {
+            if (key === 1) this._closePicker() // ESC key
+        })
+    }
+
+    /** @private */
+    _updateSV(x, y) {
+        this.saturation = Math.max(0, Math.min(1, x / this.svArea.getWidth()))
+        this.brightness = Math.max(0, Math.min(1, 1 - (y / this.svArea.getHeight())))
+        this.pointer.setX(new RelativeConstraint(this.saturation))
+            .setY(new RelativeConstraint(1 - this.brightness))
+        this._updateColor()
+    }
+
+    /** @private */
+    _updateHue(y) {
+        this.hue = Math.max(0, Math.min(1, y / this.hueStrip.getHeight()))
+        this.gradient.setStartColor(new Color(Color.HSBtoRGB(this.hue, 1, 1)))
+        this._updateColor()
+    }
+
+    /** @private */
+    _updateAlpha(x) {
+        this.alpha = Math.max(0, Math.min(1, x / this.alphaBg.getWidth()))
+        this.alphaThumb.setX(new RelativeConstraint(this.alpha))
+        this._updateColor()
+    }
+
+    /** @private */
+    _updateColor() {
+        const rgb = Color.HSBtoRGB(this.hue, this.saturation, this.brightness)
+        this.currentColor = new Color(
+            (rgb >> 16) & 0xFF,
+            (rgb >> 8) & 0xFF,
+            rgb & 0xFF,
+            Math.round(this.alpha * 255)
+        )
+        
+        this.preview.setColor(this.currentColor)
+        this.pickerPreview.setColor(this.currentColor)
+        this._trigger('change', [
+            this.currentColor.getRed(),
+            this.currentColor.getGreen(),
+            this.currentColor.getBlue(),
+            this.currentColor.getAlpha()
+        ])
+    }
+
+    /** @private */
+    _createHueGradient() {
+        return new JavaAdapter(GradientComponent, {
+            draw() {
+                UGraphics.enableBlend()
+                UGraphics.disableAlpha()
+                UGraphics.tryBlendFuncSeparate(770, 771, 1, 0)
+                UGraphics.shadeModel(7425)
+
+                const tess = UGraphics.getFromTessellator()
+                const stack = UMatrixStack.UNIT
+                const [l, t, r, b] = [this.getLeft(), this.getTop(), this.getRight(), this.getBottom()]
+
+                tess.beginWithDefaultShader(UGraphics.DrawMode.QUADS, UGraphics.CommonVertexFormats.POSITION_COLOR)
+                tess.pos(stack, l, b, 0).color(Color.BLACK).endVertex()
+                tess.pos(stack, r, b, 0).color(Color.BLACK).endVertex()
+                tess.pos(stack, l, t, 0).color(Color.WHITE).endVertex()
+                tess.pos(stack, r, t, 0).color(Color.WHITE).endVertex()
+                tess.draw()
+
+                UGraphics.shadeModel(7424)
+                UGraphics.disableBlend()
+                UGraphics.enableAlpha()
+            }
+        })
+    }
+
+    /** @private */
+    _closePicker() {
+        this.overlay.hide()
+        this.isOpen = false
+    }
+
+    getValue() {
+        return [
+            this.currentColor.getRed(),
+            this.currentColor.getGreen(),
+            this.currentColor.getBlue(),
+            this.currentColor.getAlpha()
+        ]
+    }
+
+    setValue(color) {
+        this._initColorState(color)
+        this.preview?.setColor(this.currentColor)
     }
 }
 

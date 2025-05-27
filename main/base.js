@@ -23,13 +23,30 @@ export default class GUIBase {
         this._initHandler()
         this.SinGUI = {
             background: {
-                width: 55,
-                leftRatio: 1,
-                rightRatio: 3,
-                height: 50,
+                width: 65,
+                leftRatio: 0.85,
+                rightRatio: 3.15,
+                height: 60,
                 margins: { 
                     x: 0, 
                     y: 15 
+                }
+            },
+            element: {
+                width: 93,
+                subelem: {
+                    width: 60,
+                    height: 20,
+                    description: {
+                        padding: 17, // in percent
+                        textScale: 1.0, // in pixels
+                        color: this.scheme.Sin.accent2
+                    },
+                    title: {
+                        textScale: 1.2, // in pixels
+                        yOffset: 2, // in percent
+                        color: this.scheme.Sin.accent
+                    }
                 }
             }
         }
@@ -136,8 +153,10 @@ export default class GUIBase {
             .setChildOf(this.mainBlock)
             
         this.elementBox = new ScrollComponent()
-            .setX((5).percent()).setY((5).percent())
-            .setWidth((90).percent()).setHeight((90).percent())
+            .setX((5).percent())
+            .setY((5).percent())
+            .setWidth((this.SinGUI.element.width).percent())
+            .setHeight((90).percent())
             .setChildOf(this.rightBlock)
     }
 
@@ -229,9 +248,7 @@ export default class GUIBase {
             .setColor(ElementUtils.getJavaColor([0, 0, 0, 0]))
             .setChildOf(this.elementBox)
 
-        category.elements.forEach(element => 
-            this._createElementCard(element).setChildOf(this.currentContent)
-        )
+        category.elements.forEach(element => this._createElementCard(element).setChildOf(this.currentContent))
     }
 
     /**
@@ -321,25 +338,62 @@ export default class GUIBase {
             .setHeight((80).percent())
             .setChildOf(parent)
 
-        const content = new UIRoundedRectangle(0)
+        this.currentContent = new UIRoundedRectangle(0)
             .setWidth((100).percent())
-            .setHeight(new PixelConstraint(element.subElements.filter(e => !e.shouldShow || e.shouldShow(this.config)).length * 35))
+            .setHeight(new PixelConstraint(element.subElements.length * 45))
             .setColor(ElementUtils.getJavaColor([0, 0, 0, 0]))
             .setChildOf(scroll)
-
-        element.subElements.forEach((subElem, index) => {
-            if (subElem.shouldShow && !subElem.shouldShow(this.config)) return
             
+        this.activePopupElement = element
+
+        const disabledElements = []
+        element.subElements.forEach((subElem, index) => {            
             const container = new UIRoundedRectangle(3)
                 .setX((0).percent())
                 .setY(new PixelConstraint(index * 45))
                 .setWidth((100).percent())
                 .setHeight((50).pixels())
                 .setColor(ElementUtils.getJavaColor([0, 0, 0, 0]))
-                .setChildOf(content)
+                .setChildOf(this.currentContent)
 
             this._createSubElement(subElem, container)
+
+            subElem.shouldShow && !subElem.shouldShow(this.config) && disabledElements.push({ top: index * 45, message: subElem.disabledMessage })
         })
+
+        this._createDisabledOverlay(this.currentContent, disabledElements)
+    }
+
+    /**
+     * Creates disabled state overlay with explanatory text
+     * @private
+     * @param {UIRoundedRectangle} parent - Element container
+     * @param {Array} disabledElements - Disabled elements
+     */
+    _createDisabledOverlay(parent, disabledElements) {
+        this._currentOverlay && this._currentOverlay.getParent()?.removeChild(this._currentOverlay)
+        if (!disabledElements.length) return
+
+        const first = disabledElements[0].top
+        const last = disabledElements[disabledElements.length - 1].top + 50
+        
+        this._currentOverlay = new UIRoundedRectangle(0)
+            .setX((0).percent())
+            .setY(first.pixels())
+            .setWidth((100).percent())
+            .setHeight((last - first).pixels())
+            .setColor(ElementUtils.getJavaColor([this.scheme.Sin.element.popUp.menu[0], this.scheme.Sin.element.popUp.menu[1], this.scheme.Sin.element.popUp.menu[2], 240]))
+            .onMouseClick(() => false)
+            .setChildOf(parent)
+
+        disabledElements.forEach(({ top, message }) => 
+            new UIWrappedText(`§c⚠ Parent setting is disabled.`, true, null, true, true)
+                .setX((10).percent())
+                .setY(new PixelConstraint(top - first + 15))
+                .setWidth((80).percent())
+                .setTextScale((1.2).pixels())
+                .setChildOf(this._currentOverlay)
+        )
     }
 
     /**
@@ -355,8 +409,8 @@ export default class GUIBase {
         component.create()
             .setX((0).percent())
             .setY(new CenterConstraint())
-            .setWidth((20).percent())
-            .setHeight((20).pixels())
+            .setWidth((this.SinGUI.element.subelem.width).pixels())
+            .setHeight((this.SinGUI.element.subelem.height).pixels())
             .setChildOf(container)
     }
 
@@ -368,9 +422,9 @@ export default class GUIBase {
     _createSubElementTitle(subElem, container) {
         new UIText(subElem.title)
             .setX(new CenterConstraint())
-            .setY((2).percent())
-            .setTextScale(1.2.pixels())
-            .setColor(ElementUtils.getJavaColor(this.scheme.Sin.accent))
+            .setY((this.SinGUI.element.subelem.title.yOffset).percent())
+            .setTextScale((this.SinGUI.element.subelem.title.textScale).pixels())
+            .setColor(ElementUtils.getJavaColor(this.SinGUI.element.subelem.title.color))
             .setChildOf(container)
     }
 
@@ -381,11 +435,11 @@ export default class GUIBase {
      */
     _createSubElementDescription(subElem, container) {
         new UIWrappedText(subElem.description, true, null, false, false, 10)
-            .setX((25).percent())
+            .setX((this.SinGUI.element.subelem.description.padding).percent())
             .setY(new CenterConstraint())
             .setWidth((75).percent())
-            .setTextScale((1.0).pixels())
-            .setColor(ElementUtils.getJavaColor(this.scheme.Sin.accent2))
+            .setTextScale((this.SinGUI.element.subelem.description.textScale).pixels())
+            .setColor(ElementUtils.getJavaColor(this.SinGUI.element.subelem.description.color))
             .setChildOf(container)
     }
 
@@ -451,8 +505,16 @@ export default class GUIBase {
 
     /** @private */
     _refreshPopup() {
-        this.activePopupElement?.getParent()?.removeChild(this.activePopupElement)
-        this._createElementPopup(this.activeElement)
+        if (this.activeElement) {
+            const disabled = this.activeElement.subElements
+                .map((s, i) => s.shouldShow && !s.shouldShow(this.config) ? {
+                    top: i * 45,
+                    message: s.disabledMessage
+                } : null)
+                .filter(Boolean)
+            
+            this._createDisabledOverlay(this.currentContent, disabled)
+        }
     }
     
     /**
@@ -469,9 +531,7 @@ export default class GUIBase {
      */
     _switchCategory(categoryName) {
         this.activeCategory = categoryName
-        this.rightBlock.getChildren()
-            .filter(child => child instanceof UIRoundedRectangle)
-            .forEach(popup => popup.getParent()?.removeChild(popup))
+        this.rightBlock.getChildren().filter(c => c instanceof UIRoundedRectangle).forEach(p => p.getParent()?.removeChild(p))
             
         this._updateLeftPanel()
         this._updateRightPanel(categoryName)
