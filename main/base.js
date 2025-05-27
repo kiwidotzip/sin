@@ -69,9 +69,7 @@ export default class GUIBase {
         const regs = this.handler.registers
         regs._stop = () => {
             if (regs.isCustom) return
-            for (const ev of regs.eventsList) {
-                if (ev && typeof ev.unregister === "function") ev.unregister()
-            }
+            for (const ev of regs.eventsList) ev && typeof ev.unregister === "function" && ev.unregister()
             regs.eventsList.clear()
         }
         this.handler.ctGui.registerInit(() => Keyboard.enableRepeatEvents(true))
@@ -92,7 +90,8 @@ export default class GUIBase {
         const rightWidth = (this.SinGUI.background.rightRatio / totalRatio) * 100
 
         this.mainBlock = new UIRoundedRectangle(0)
-            .setX(new CenterConstraint()).setY(new CenterConstraint())
+            .setX(new CenterConstraint())
+            .setY(new CenterConstraint())
             .setWidth(this.SinGUI.background.width.percent())
             .setHeight(this.SinGUI.background.height.percent())
             .setColor(ElementUtils.getJavaColor([255, 255, 255, 0]))
@@ -100,7 +99,7 @@ export default class GUIBase {
         this._createLeftPanel(leftWidth)
         this._createRightPanel(leftWidth, rightWidth)
         this._updateLeftPanel()
-        if (this.categories.length) this._switchCategory(this.categories[0].name)
+        this.categories.length && this._switchCategory(this.categories[0].name)
 
         this.handler.draw(this.mainBlock, false)
     }
@@ -369,8 +368,8 @@ export default class GUIBase {
      * @param {UIRoundedRectangle} container 
      */
     _createSubElement(subElem, container) {
-        if (subElem.title) this._createSubElementTitle(subElem, container)
-        if (subElem.description) this._createSubElementDescription(subElem, container)
+        subElem.title && this._createSubElementTitle(subElem, container)
+        subElem.description && this._createSubElementDescription(subElem, container)
         this._subElements.set(subElem.configName, { container, shouldShow: subElem.shouldShow })
         this._updateElementVisibility(subElem.configName)
         this._originalHeights.set(container, container.getHeight())
@@ -470,9 +469,8 @@ export default class GUIBase {
     _updateConfig(key, value) {
         this.config[key] = value
         
-        this._subElements.forEach((_, configName) => {
-            if (this._subElements.get(configName).shouldShow?.toString()?.includes(key)) this._updateElementVisibility(configName)
-        })
+        this._subElements.forEach((_, configName) => 
+            this._subElements.get(configName).shouldShow?.toString()?.includes(key) && this._updateElementVisibility(configName))
     }
 
     /**
@@ -525,7 +523,7 @@ export default class GUIBase {
         let subcategoryObj = categoryObj.elements.find(e => e.name === subcategory) || this._createSubcategory(categoryObj, subcategory)
         
         subcategoryObj.subElements.push({ type, ...config })
-        if (this.activeCategory === category && this.isInitialized) this._updateRightPanel(category)
+        this.activeCategory === category && this.isInitialized && this._updateRightPanel(category)
         return this
     }
 
