@@ -12,7 +12,7 @@
             "hoverColor": [50, 50, 50, 255],
             "text": [220, 220, 220, 255],
             "popUp": {
-                "menu": [30, 30, 30, 245],
+                "menu": [30, 30, 30, 255],
                 "text": [102, 255, 204, 255]
             },
             "closeButton": {
@@ -71,10 +71,41 @@
                 "border": [70, 70, 70, 255]
             },
             "colorPicker": {
-                "hueBackground": [40, 40, 40, 255],
-                "svBackground": [30, 30, 30, 255],
+                "background": [35, 35, 35, 255],
+                "outline": [60, 60, 60, 255],
+                "outlineSize": 1.5,
+                "gradient": {
+                    "background": [30, 30, 30, 255],
+                    "outline": [60, 60, 60, 255],
+                    "outlineSize": 1
+                },
+                "hue": {
+                    "background": [40, 40, 40, 255],
+                    "outline": [60, 60, 60, 255],
+                    "outlineSize": 1
+                },
+                "pointer": {
+                    "outline": [255, 255, 255, 255],
+                    "outlineSize": 1
+                },
+                "alphaSlider": {
+                    "track": [50, 50, 50, 255],
+                    "thumb": [102, 255, 204, 255],
+                    "border": [60, 60, 60, 255]
+                },
+                "text": [220, 220, 220, 255],
+                "textInput": {
+                    "normal": {
+                        "background": [40, 40, 40, 255],
+                        "text": [220, 220, 220, 255]
+                    },
+                    "focus": {
+                        "background": [50, 50, 50, 255],
+                        "text": [255, 255, 255, 255]
+                    }
+                },
                 "previewBorder": [102, 255, 204, 255],
-                "pointer": [220, 220, 220, 255]
+                "roundness": 5
             },
             "keybind": {
                 "background": [40, 40, 40, 255],
