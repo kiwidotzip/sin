@@ -1,7 +1,7 @@
 import ElementUtils from "../../DocGuiLib/core/Element"
 import HandleGui from "../../DocGuiLib/core/Gui"
 import HandleRegisters from "../../DocGuiLib/listeners/Registers"
-import { UIRoundedRectangle, Window, UIText, UIWrappedText, CenterConstraint, CramSiblingConstraint, PixelConstraint, ScrollComponent, animate, Animations, ConstantColorConstraint } from "../../Elementa"
+import { UIRoundedRectangle, Window, UIText, UIWrappedText, CenterConstraint, CramSiblingConstraint, ChildBasedSizeConstraint, PixelConstraint, ScrollComponent, animate, Animations, ConstantColorConstraint } from "../../Elementa"
 import { CustomGui } from "../../DocGuiLib/core/CustomGui"
 import { SwitchElement, TextInputElement, SliderElement, DropdownElement, ColorPickerElement, KeybindElement, ButtonElement } from "./elements"
 
@@ -55,6 +55,8 @@ export default class GUIBase {
         this.activeElement = null
         this.activePopupElement = null
         this.isInitialized = false
+        this._subElements = new Map()
+        this._originalHeights = new Map()
         this.onOpenGui = []
         this.onCloseGui = []
     }
@@ -193,6 +195,28 @@ export default class GUIBase {
 
     /**
      * @private
+     * @param {string} categoryName 
+     */
+    _updateRightPanel(categoryName) {
+        this.currentContent?.getParent()?.removeChild(this.currentContent)
+        this.currentContent = null
+        
+        const category = this.categories.find(c => c.name === categoryName)
+        if (!category) return
+        
+        this.currentContent = new UIRoundedRectangle(0)
+            .setX((0).percent())
+            .setY((0).percent())
+            .setWidth((100).percent())
+            .setHeight(new PixelConstraint(Math.ceil(category.elements.length / 3) * 92))
+            .setColor(ElementUtils.getJavaColor([0, 0, 0, 0]))
+            .setChildOf(this.elementBox)
+
+        category.elements.forEach(element => this._createElementCard(element).setChildOf(this.currentContent))
+    }
+
+    /**
+     * @private
      * @param {UIRoundedRectangle} bgComponent 
      * @param {number[]} originalColor 
      */
@@ -231,28 +255,6 @@ export default class GUIBase {
 
     /**
      * @private
-     * @param {string} categoryName 
-     */
-    _updateRightPanel(categoryName) {
-        this.currentContent?.getParent()?.removeChild(this.currentContent)
-        this.currentContent = null
-        
-        const category = this.categories.find(c => c.name === categoryName)
-        if (!category) return
-        
-        this.currentContent = new UIRoundedRectangle(0)
-            .setX((0).percent())
-            .setY((0).percent())
-            .setWidth((100).percent())
-            .setHeight(new PixelConstraint(Math.ceil(category.elements.length / 3) * 92))
-            .setColor(ElementUtils.getJavaColor([0, 0, 0, 0]))
-            .setChildOf(this.elementBox)
-
-        category.elements.forEach(element => this._createElementCard(element).setChildOf(this.currentContent))
-    }
-
-    /**
-     * @private
      * @param {object} element 
      * @returns {UIRoundedRectangle}
      */
@@ -268,8 +270,10 @@ export default class GUIBase {
             .onMouseLeave(() => this._animateColor(card, this.scheme.Sin.element.color))
 
         new UIWrappedText(element.name, true, null, true, true)
-            .setX(new CenterConstraint()).setY(new CenterConstraint())
-            .setWidth((90).percent()).setTextScale(1.5.pixels())
+            .setX(new CenterConstraint())
+            .setY(new CenterConstraint())
+            .setWidth((90).percent())
+            .setTextScale(1.5.pixels())
             .setColor(ElementUtils.getJavaColor(this.scheme.Sin.accent))
             .setChildOf(card)
 
@@ -340,60 +344,23 @@ export default class GUIBase {
 
         this.currentContent = new UIRoundedRectangle(0)
             .setWidth((100).percent())
-            .setHeight(new PixelConstraint(element.subElements.length * 45))
+            .setHeight(new ChildBasedSizeConstraint())
             .setColor(ElementUtils.getJavaColor([0, 0, 0, 0]))
             .setChildOf(scroll)
-            
-        this.activePopupElement = element
 
-        const disabledElements = []
+        let previousElement = null
         element.subElements.forEach((subElem, index) => {            
             const container = new UIRoundedRectangle(3)
                 .setX((0).percent())
-                .setY(new PixelConstraint(index * 45))
+                .setY(previousElement ? new CramSiblingConstraint(5) : (0).percent())
                 .setWidth((100).percent())
                 .setHeight((50).pixels())
                 .setColor(ElementUtils.getJavaColor([0, 0, 0, 0]))
                 .setChildOf(this.currentContent)
 
+            previousElement = container
             this._createSubElement(subElem, container)
-
-            subElem.shouldShow && !subElem.shouldShow(this.config) && disabledElements.push({ top: index * 45, message: subElem.disabledMessage })
         })
-
-        this._createDisabledOverlay(this.currentContent, disabledElements)
-    }
-
-    /**
-     * Creates disabled state overlay with explanatory text
-     * @private
-     * @param {UIRoundedRectangle} parent - Element container
-     * @param {Array} disabledElements - Disabled elements
-     */
-    _createDisabledOverlay(parent, disabledElements) {
-        this._currentOverlay && this._currentOverlay.getParent()?.removeChild(this._currentOverlay)
-        if (!disabledElements.length) return
-
-        const first = disabledElements[0].top
-        const last = disabledElements[disabledElements.length - 1].top + 50
-        
-        this._currentOverlay = new UIRoundedRectangle(0)
-            .setX((0).percent())
-            .setY(first.pixels())
-            .setWidth((100).percent())
-            .setHeight((last - first).pixels())
-            .setColor(ElementUtils.getJavaColor([this.scheme.Sin.element.popUp.menu[0], this.scheme.Sin.element.popUp.menu[1], this.scheme.Sin.element.popUp.menu[2], 240]))
-            .onMouseClick(() => false)
-            .setChildOf(parent)
-
-        disabledElements.forEach(({ top, message }) => 
-            new UIWrappedText(`§c⚠ Parent setting is disabled.`, true, null, true, true)
-                .setX((10).percent())
-                .setY(new PixelConstraint(top - first + 15))
-                .setWidth((80).percent())
-                .setTextScale((1.2).pixels())
-                .setChildOf(this._currentOverlay)
-        )
     }
 
     /**
@@ -404,7 +371,9 @@ export default class GUIBase {
     _createSubElement(subElem, container) {
         if (subElem.title) this._createSubElementTitle(subElem, container)
         if (subElem.description) this._createSubElementDescription(subElem, container)
-        
+        this._subElements.set(subElem.configName, { container, shouldShow: subElem.shouldShow })
+        this._updateElementVisibility(subElem.configName)
+        this._originalHeights.set(container, container.getHeight())
         const component = this._createComponent(subElem)
         component.create()
             .setX((0).percent())
@@ -412,6 +381,22 @@ export default class GUIBase {
             .setWidth((this.SinGUI.element.subelem.width).pixels())
             .setHeight((this.SinGUI.element.subelem.height).pixels())
             .setChildOf(container)
+    }
+
+    /**
+     * @private
+     * @param {string} configName
+     */
+    _updateElementVisibility(configName) {
+        const { container, shouldShow } = this._subElements.get(configName) || {}
+        if (!container) return
+        const visible = !shouldShow || shouldShow(this.config)
+        const originalHeight = this._originalHeights.get(container) || 50
+
+        visible
+            ? container && container.setHeight(originalHeight.pixels()).unhide(true)
+            : container && container.setHeight((0).pixels()).hide(true)
+        this.currentContent?.getParent()?.onWindowResize()
     }
 
     /**
@@ -459,13 +444,13 @@ export default class GUIBase {
                 .on('change', val => this._updateConfig(subElem.configName, val)),
             textinput: () => new TextInputElement(currentValue, subElem.placeHolder)
                 .setColorScheme(this.scheme)
-                .on('change', val => this.config[subElem.configName] = val),
+                .on('change', val => this._updateConfig(subElem.configName, val)),
             slider: () => new SliderElement(subElem.options[0], subElem.options[1], currentValue)
                 .setColorScheme(this.scheme)
-                .on('change', val => this.config[subElem.configName] = val),
+                .on('change', val => this._updateConfig(subElem.configName, val)),
             dropdown: () => new DropdownElement(subElem.options, currentValue)
                 .setColorScheme(this.scheme)
-                .on('change', val => this.config[subElem.configName] = val),
+                .on('change', val => this._updateConfig(subElem.configName, val)),
             colorpicker: () => new ColorPickerElement(currentValue)
                 .setColorScheme(this.scheme)
                 .on('change', val => this.config[subElem.configName] = val),
@@ -484,7 +469,10 @@ export default class GUIBase {
      */
     _updateConfig(key, value) {
         this.config[key] = value
-        this._refreshPopup()
+        
+        this._subElements.forEach((_, configName) => {
+            if (this._subElements.get(configName).shouldShow?.toString()?.includes(key)) this._updateElementVisibility(configName)
+        })
     }
 
     /**
@@ -502,20 +490,6 @@ export default class GUIBase {
             .onMouseEnter(() => this._animateColor(closeBtn, this.scheme.Sin.element.closeButton.hover))
             .onMouseLeave(() => this._animateColor(closeBtn, this.scheme.Sin.element.closeButton.normal))
     }
-
-    /** @private */
-    _refreshPopup() {
-        if (this.activeElement) {
-            const disabled = this.activeElement.subElements
-                .map((s, i) => s.shouldShow && !s.shouldShow(this.config) ? {
-                    top: i * 45,
-                    message: s.disabledMessage
-                } : null)
-                .filter(Boolean)
-            
-            this._createDisabledOverlay(this.currentContent, disabled)
-        }
-    }
     
     /**
      * @private
@@ -531,7 +505,9 @@ export default class GUIBase {
      */
     _switchCategory(categoryName) {
         this.activeCategory = categoryName
-        this.rightBlock.getChildren().filter(c => c instanceof UIRoundedRectangle).forEach(p => p.getParent()?.removeChild(p))
+        this.rightBlock.getChildren().filter(c => c instanceof UIRoundedRectangle).forEach(p => p.getParent().removeChild(p))
+        this.elementBox.clearChildren()
+        this.currentContent = null
             
         this._updateLeftPanel()
         this._updateRightPanel(categoryName)
@@ -704,5 +680,15 @@ export default class GUIBase {
         left && (this.SinGUI.background.leftRatio = left)
         right && (this.SinGUI.background.rightRatio = right)
         return this
+    }
+
+    /**
+     * Sets a setting value
+     * @param {string} valueName
+     * @param {value} newvalue
+     * @returns this for chaining
+     */
+    setValue(valueName, newvalue) {
+        valueName && newvalue && (this.SinGUI[valueName] = newvalue)
     }
 }
