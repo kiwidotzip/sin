@@ -343,50 +343,87 @@ export default class GUIBase {
     _createPopupContent(parent, element) {
         const scroll = new ScrollComponent()
             .setX((5).percent())
-            .setY((15).percent())
+            .setY((18).percent())
             .setWidth((90).percent())
-            .setHeight((80).percent())
+            .setHeight((77).percent())
             .setChildOf(parent)
 
         this.currentContent = new UIRoundedRectangle(0)
             .setWidth((100).percent())
-            .setHeight(new ChildBasedSizeConstraint())
+            .setHeight(new ChildBasedSizeConstraint(5))
             .setColor(ElementUtils.getJavaColor([0, 0, 0, 0]))
             .setChildOf(scroll)
 
         let previousElement = null
-        element.subElements.forEach((subElem, index) => {            
-            const container = new UIRoundedRectangle(3)
+        element.subElements.forEach((subElem, index) => {
+            const outerContainer = new UIRoundedRectangle(3)
                 .setX((0).percent())
-                .setY(previousElement ? new CramSiblingConstraint(5) : (0).percent())
+                .setY(previousElement ? new CramSiblingConstraint(18) : (0).percent())
                 .setWidth((100).percent())
-                .setHeight((50).pixels())
+                .setHeight((62).pixels())
                 .setColor(ElementUtils.getJavaColor([0, 0, 0, 0]))
                 .setChildOf(this.currentContent)
 
-            previousElement = container
-            this._createSubElement(subElem, container)
-        })
-    }
+            const card = new UIRoundedRectangle(this.scheme.Sin.base.roundness)
+                .setX((0).percent())
+                .setY((12).pixels())
+                .setWidth((100).percent())
+                .setHeight((50).pixels())
+                .setColor(ElementUtils.getJavaColor(this.scheme.Sin.accent))
+                .setChildOf(outerContainer)
+            new UIRoundedRectangle(this.scheme.Sin.base.roundness)
+                .setX(new CenterConstraint())
+                .setY(new CenterConstraint())
+                .setWidth((99.75).percent())
+                .setHeight((98.5).percent())
+                .setColor(ElementUtils.getJavaColor(this.scheme.Sin.element.popUp.menu))
+                .setChildOf(card)
 
-    /**
-     * @private
-     * @param {object} subElem 
-     * @param {UIRoundedRectangle} container 
-     */
-    _createSubElement(subElem, container) {
-        if (subElem.title) this._createSubElementTitle(subElem, container)
-        if (subElem.description) this._createSubElementDescription(subElem, container)
-        this._subElements.set(subElem.configName, { container, shouldShow: subElem.shouldShow })
-        this._updateElementVisibility(subElem.configName)
-        this._originalHeights.set(container, container.getHeight())
-        const component = this._createComponent(subElem)
-        component.create()
-            .setX((0).percent())
-            .setY(new CenterConstraint())
-            .setWidth((this.SinGUI.element.subelem.width).pixels())
-            .setHeight((this.SinGUI.element.subelem.height).pixels())
-            .setChildOf(container)
+            if (subElem.title) {
+                const TitleText = new UIText(subElem.title)
+                    .setX((4).pixels())
+                    .setY((0).pixels())
+                    .setTextScale((this.SinGUI.element.subelem.title.textScale + 0.2).pixels())
+                    .setColor(ElementUtils.getJavaColor(this.SinGUI.element.subelem.title.color))
+                    .setChildOf(outerContainer)
+                new UIRoundedRectangle(0)
+                    .setX(new CenterConstraint())
+                    .setY(new CenterConstraint())
+                    .setWidth((105).percent())
+                    .setHeight((105).percent())
+                    .setColor(ElementUtils.getJavaColor(this.scheme.Sin.element.popUp.menu))
+                    .setChildOf(TitleText)
+                new UIText(subElem.title)
+                    .setX((0).pixels())
+                    .setY((4).pixels())
+                    .setTextScale((this.SinGUI.element.subelem.title.textScale + 0.2).pixels())
+                    .setColor(ElementUtils.getJavaColor(this.SinGUI.element.subelem.title.color))
+                    .setChildOf(TitleText)
+            }
+            
+            if (subElem.description) 
+                new UIWrappedText(subElem.description, true, null, false, false, 10)
+                    .setX((this.SinGUI.element.subelem.description.padding).percent())
+                    .setY(new CenterConstraint())
+                    .setWidth((75).percent())
+                    .setTextScale((this.SinGUI.element.subelem.description.textScale).pixels())
+                    .setColor(ElementUtils.getJavaColor(this.SinGUI.element.subelem.description.color))
+                    .setChildOf(card)
+
+            this._subElements.set(subElem.configName, { container: outerContainer, shouldShow: subElem.shouldShow })
+            this._updateElementVisibility(subElem.configName)
+            this._originalHeights.set(outerContainer, outerContainer.getHeight())
+
+            const component = this._createComponent(subElem)
+            component.create()
+                .setX((1).percent())
+                .setY(new CenterConstraint())
+                .setWidth((this.SinGUI.element.subelem.width).pixels())
+                .setHeight((this.SinGUI.element.subelem.height).pixels())
+                .setChildOf(card)
+
+            previousElement = outerContainer
+        })
     }
 
     /**
@@ -403,35 +440,6 @@ export default class GUIBase {
             ? container && container.setHeight(originalHeight.pixels()).unhide(true)
             : container && container.setHeight((0).pixels()).hide(true)
         this.currentContent?.getParent()?.onWindowResize()
-    }
-
-    /**
-     * @private
-     * @param {object} subElem 
-     * @param {UIRoundedRectangle} container 
-     */
-    _createSubElementTitle(subElem, container) {
-        new UIText(subElem.title)
-            .setX(new CenterConstraint())
-            .setY((this.SinGUI.element.subelem.title.yOffset).percent())
-            .setTextScale((this.SinGUI.element.subelem.title.textScale).pixels())
-            .setColor(ElementUtils.getJavaColor(this.SinGUI.element.subelem.title.color))
-            .setChildOf(container)
-    }
-
-    /**
-     * @private
-     * @param {object} subElem 
-     * @param {UIRoundedRectangle} container 
-     */
-    _createSubElementDescription(subElem, container) {
-        new UIWrappedText(subElem.description, true, null, false, false, 10)
-            .setX((this.SinGUI.element.subelem.description.padding).percent())
-            .setY(new CenterConstraint())
-            .setWidth((75).percent())
-            .setTextScale((this.SinGUI.element.subelem.description.textScale).pixels())
-            .setColor(ElementUtils.getJavaColor(this.SinGUI.element.subelem.description.color))
-            .setChildOf(container)
     }
 
     /**
