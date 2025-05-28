@@ -64,6 +64,7 @@ export default class GUIBase {
         this.onOpenGui = []
         this.onCloseGui = []
         this._loadConfig()
+        register("gameUnload", () => this._saveConfig())
     }
 
     /** @private */
@@ -479,8 +480,7 @@ export default class GUIBase {
             this._subElements.get(configName).shouldShow?.toString()?.includes(key) && 
             this._updateElementVisibility(configName)
         )
-        this.listeners.forEach((_, handler) => handler(oldVal, newVal, key))
-        if (this.configPath) this._saveConfig(true)
+        this.listeners.forEach((meta, handler) => meta.any ? handler(oldVal, newVal, key) : handler(key, oldVal, newVal))
     }
 
     /**
@@ -559,12 +559,30 @@ export default class GUIBase {
         category.elements.push(newSubcategory)
         return newSubcategory
     }
-
-    /** @private */
-    _triggerListeners(key, newVal, oldVal) {
-        this.listeners.forEach((_, handler) => handler(key, newVal, oldVal))
+    /**
+     * Returns the default value for a config element based on its type.
+     * @private
+     * @param {object} element
+     */
+    _getDefaultValue(element) {
+        switch (element.type) {
+            case "switch":
+                return false
+            case "textinput":
+                return element.placeHolder ?? ""
+            case "slider":
+                return element.options[0]
+            case "dropdown":
+                return element.options[0]
+            case "colorpicker":
+                return [255, 255, 255, 255]
+            case "keybind":
+                return "NONE"
+            case "button":
+            default:
+                return null
+        }
     }
-
     /** @private */
     _loadConfig() {
         if (!this.configPath) return
@@ -584,11 +602,8 @@ export default class GUIBase {
         }
     }
 
-    /**
-     * @private
-     * @param {boolean} [silent] Whether to suppress listener notifications
-     */
-    _saveConfig(silent = false) {
+    /** @private */
+    _saveConfig() {
         if (!this.configPath) return
         
         try {
@@ -599,13 +614,12 @@ export default class GUIBase {
                         .filter(e => e.configName)
                         .map(e => ({
                             name: e.configName,
-                            value: this.config[e.configName] ?? e.value ?? e.placeHolder ?? null
+                            value: this.config[e.configName] ?? e.value ?? e.placeHolder ?? this._getDefaultValue(e)
                         }))
                 ))
             }))
             
             FileLib.write(this.moduleName, this.configPath, JSON.stringify(data, null, 4))
-            if (!silent) this._triggerListeners('save')
         } catch(e) {
             ChatLib.chat(`&b[SIN] &fFailed to save config for &c${this.moduleName}&f: &c${e}`)
         }
@@ -668,21 +682,21 @@ export default class GUIBase {
     }
 
     /**
-     * Register a listener for config changes
-     * - registerListener(key, fn): fires for that key
-     * - registerListener(fn): fires for any key
-     * @param {string} key Config key to watch
-     * @param {function} cb The callback
-     * @returns {() => void} Unsubscribe function
+     * @param {string} [key] Config key to watch, or callback for global
+     * @param {function} cb The callback for key-specific listeners
+     * @returns this for chaining
+     * @example
+     * registerListener((oldV, newV, key) => { ... }) // Listen for any config change
+     * registerListener("partycmd", (oldV, newV) => { ... }) // Listen for a specific config
      */
     registerListener(key, cb) {
         if (typeof key === "function") {
-            this.listeners.set(key, true)
-            return () => this.listeners.delete(key)
+            this.listeners.set(key, { any: true })
+            return this
         }
-        const handler = (changed, newVal, oldVal) => changed === key && cb(oldVal, newVal, key)
-        this.listeners.set(handler, true)
-        return () => this.listeners.delete(handler)
+        const handler = (changed, oldVal, newVal) => changed === key && cb(oldVal, newVal, key)
+        this.listeners.set(handler, { any: false })
+        return this
     }
 
     /**
