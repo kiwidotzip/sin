@@ -386,7 +386,7 @@ export class TextInputElement extends BaseElement {
                 .setColor(this._getColor('textInput.placeholder'))
                 .setChildOf(bg)
             
-            this.value === "" ? placeholderText.unhide() : placeholderText.hide()
+            this.value === "" ? placeholderText.unhide(true) : placeholderText.hide()
 
             input.onKeyType(() => {
                 const placeholder = bg.getChildren().find(child => child instanceof UIText && child.getText() === this.placeholder)

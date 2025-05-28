@@ -9,17 +9,20 @@ import { SwitchElement, TextInputElement, SliderElement, DropdownElement, ColorP
 /** @typedef {'button'|'switch'|'textinput'|'slider'|'dropdown'|'colorpicker'|'keybind'} ElementType */
 export default class GUIBase {
     /**
-     * @param {string} moduleName 
-     * @param {string} schemePath 
-     * @param {string} title 
+     * @param {string} moduleName
+     * @param {string} schemePath
+     * @param {string} title
+     * @param {string} confPath
      */
-    constructor(moduleName, schemePath, title) {
+    constructor(moduleName, schemePath, title, confPath) {
         this.title = title
         this.colorscheme = FileLib.read(moduleName, schemePath) || FileLib.read("sin", "data/_defaultScheme.json")
+        this.moduleName = moduleName
+        this.configPath = confPath || "data/SINsettings.json"
         this.handler = new HandleGui()._setColorScheme(this.colorscheme)
         this.scheme = JSON.parse(this.handler.getColorScheme())
         this.categories = []
-        this.config = {}
+        this.config = confPath ? JSON.parse(FileLib.read(moduleName, confPath) || "{}") : {}
         this._initHandler()
         this.SinGUI = {
             background: {
@@ -57,8 +60,10 @@ export default class GUIBase {
         this.isInitialized = false
         this._subElements = new Map()
         this._originalHeights = new Map()
+        this.listeners = new Map()
         this.onOpenGui = []
         this.onCloseGui = []
+        this._loadConfig()
     }
 
     /** @private */
@@ -69,7 +74,9 @@ export default class GUIBase {
         const regs = this.handler.registers
         regs._stop = () => {
             if (regs.isCustom) return
-            for (const ev of regs.eventsList) ev && typeof ev.unregister === "function" && ev.unregister()
+            for (const ev of regs.eventsList) {
+                if (ev && typeof ev.unregister === "function") ev.unregister()
+            }
             regs.eventsList.clear()
         }
         this.handler.ctGui.registerInit(() => Keyboard.enableRepeatEvents(true))
@@ -77,9 +84,9 @@ export default class GUIBase {
         this.handler.registers.onClose(() => {
             this.onCloseGui.forEach(fn => fn())
             Keyboard.enableRepeatEvents(false)
+            this.listeners.clear()
         })
     }
-
     /** @private */
     _createGUI() {
         if (this.isInitialized) return
@@ -90,8 +97,7 @@ export default class GUIBase {
         const rightWidth = (this.SinGUI.background.rightRatio / totalRatio) * 100
 
         this.mainBlock = new UIRoundedRectangle(0)
-            .setX(new CenterConstraint())
-            .setY(new CenterConstraint())
+            .setX(new CenterConstraint()).setY(new CenterConstraint())
             .setWidth(this.SinGUI.background.width.percent())
             .setHeight(this.SinGUI.background.height.percent())
             .setColor(ElementUtils.getJavaColor([255, 255, 255, 0]))
@@ -99,7 +105,7 @@ export default class GUIBase {
         this._createLeftPanel(leftWidth)
         this._createRightPanel(leftWidth, rightWidth)
         this._updateLeftPanel()
-        this.categories.length && this._switchCategory(this.categories[0].name)
+        if (this.categories.length) this._switchCategory(this.categories[0].name)
 
         this.handler.draw(this.mainBlock, false)
     }
@@ -368,8 +374,8 @@ export default class GUIBase {
      * @param {UIRoundedRectangle} container 
      */
     _createSubElement(subElem, container) {
-        subElem.title && this._createSubElementTitle(subElem, container)
-        subElem.description && this._createSubElementDescription(subElem, container)
+        if (subElem.title) this._createSubElementTitle(subElem, container)
+        if (subElem.description) this._createSubElementDescription(subElem, container)
         this._subElements.set(subElem.configName, { container, shouldShow: subElem.shouldShow })
         this._updateElementVisibility(subElem.configName)
         this._originalHeights.set(container, container.getHeight())
@@ -466,11 +472,15 @@ export default class GUIBase {
      * @param {string} key 
      * @param {any} value 
      */
-    _updateConfig(key, value) {
-        this.config[key] = value
-        
+    _updateConfig(key, newVal) {
+        const oldVal = this.config[key]
+        this.config[key] = newVal
         this._subElements.forEach((_, configName) => 
-            this._subElements.get(configName).shouldShow?.toString()?.includes(key) && this._updateElementVisibility(configName))
+            this._subElements.get(configName).shouldShow?.toString()?.includes(key) && 
+            this._updateElementVisibility(configName)
+        )
+        this.listeners.forEach((_, handler) => handler(oldVal, newVal, key))
+        if (this.configPath) this._saveConfig(true)
     }
 
     /**
@@ -523,7 +533,7 @@ export default class GUIBase {
         let subcategoryObj = categoryObj.elements.find(e => e.name === subcategory) || this._createSubcategory(categoryObj, subcategory)
         
         subcategoryObj.subElements.push({ type, ...config })
-        this.activeCategory === category && this.isInitialized && this._updateRightPanel(category)
+        if (this.activeCategory === category && this.isInitialized) this._updateRightPanel(category)
         return this
     }
 
@@ -548,6 +558,57 @@ export default class GUIBase {
         const newSubcategory = { name, elements: [], subElements: [] }
         category.elements.push(newSubcategory)
         return newSubcategory
+    }
+
+    /** @private */
+    _triggerListeners(key, newVal, oldVal) {
+        this.listeners.forEach((_, handler) => handler(key, newVal, oldVal))
+    }
+
+    /** @private */
+    _loadConfig() {
+        if (!this.configPath) return
+
+        try {
+            const saved = FileLib.read(this.moduleName, this.configPath)
+            if (!saved) return
+            const data = JSON.parse(saved)
+            this.config = {}
+            data.forEach(category =>
+                category.settings.forEach(setting => {
+                    this.config[setting.name] = setting.value
+                })
+            )
+        } catch(e) {
+            ChatLib.chat(`&b[SIN] &fFailed to load config for &c${this.moduleName}&f: &c${e}`)
+        }
+    }
+
+    /**
+     * @private
+     * @param {boolean} [silent] Whether to suppress listener notifications
+     */
+    _saveConfig(silent = false) {
+        if (!this.configPath) return
+        
+        try {
+            const data = this.categories.map(cat => ({
+                category: cat.name,
+                settings: [].concat(...cat.elements.map(sub => 
+                    sub.subElements
+                        .filter(e => e.configName)
+                        .map(e => ({
+                            name: e.configName,
+                            value: this.config[e.configName] ?? e.value ?? e.placeHolder ?? null
+                        }))
+                ))
+            }))
+            
+            FileLib.write(this.moduleName, this.configPath, JSON.stringify(data, null, 4))
+            if (!silent) this._triggerListeners('save')
+        } catch(e) {
+            ChatLib.chat(`&b[SIN] &fFailed to save config for &c${this.moduleName}&f: &c${e}`)
+        }
     }
 
     /** 
@@ -607,6 +668,49 @@ export default class GUIBase {
     }
 
     /**
+     * Register a listener for config changes
+     * - registerListener(key, fn): fires for that key
+     * - registerListener(fn): fires for any key
+     * @param {string} key Config key to watch
+     * @param {function} cb The callback
+     * @returns {() => void} Unsubscribe function
+     */
+    registerListener(key, cb) {
+        if (typeof key === "function") {
+            this.listeners.set(key, true)
+            return () => this.listeners.delete(key)
+        }
+        const handler = (changed, newVal, oldVal) => changed === key && cb(oldVal, newVal, key)
+        this.listeners.set(handler, true)
+        return () => this.listeners.delete(handler)
+    }
+
+    /**
+     * Returns a settings object with all config keys (using defaults/placeholders if unset),
+     * a .getConfig() method, a .settings property, and all instance methods attached.
+     * @returns {object} Settings object for this config
+     */
+    getSettings() {
+        const elements = [].concat(...this.categories.map(cat => 
+            [].concat(...cat.elements.map(sub => sub.subElements))
+        )).filter(e => e.configName)
+        
+        const settings = {}
+        elements.forEach(e => {
+            settings[e.configName] = this.config[e.configName] ?? e.value ?? e.placeHolder ?? null
+        })
+        
+        settings.getConfig = () => this
+        settings.settings = settings
+        
+        Object.getOwnPropertyNames(Object.getPrototypeOf(this))
+            .filter(k => typeof this[k] === "function" && k !== "constructor")
+            .forEach(k => settings[k] = this[k].bind(this))
+        
+        return settings
+    }
+
+    /**
      * Opens the GUI
      * @returns this for chaining
      */
@@ -615,6 +719,7 @@ export default class GUIBase {
         this.handler.ctGui.open()
         return this
     }
+
     /**
      * Closes the GUI
      * @returns this for chaining
