@@ -41,7 +41,7 @@ export default class GUIBase {
                     width: 60,
                     height: 20,
                     description: {
-                        padding: 17, // in percent
+                        padding: 20, // in percent
                         textScale: 1.0, // in pixels
                         color: this.scheme.Sin.accent2
                     },
@@ -127,7 +127,7 @@ export default class GUIBase {
         new UIText(this.title)
             .setX(new CenterConstraint())
             .setY((3).percent())
-            .setTextScale(new PixelConstraint(this.SinGUI.background.height * 0.03, true))
+            .setTextScale(new PixelConstraint(this.SinGUI.background.height * 0.0285, true))
             .setChildOf(this.leftBlock)
             
         this.categoryScroll = new ScrollComponent()
@@ -416,7 +416,7 @@ export default class GUIBase {
 
             const component = this._createComponent(subElem)
             component.create()
-                .setX((1).percent())
+                .setX((3).percent())
                 .setY(new CenterConstraint())
                 .setWidth((this.SinGUI.element.subelem.width).pixels())
                 .setHeight((this.SinGUI.element.subelem.height).pixels())
