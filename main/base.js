@@ -311,6 +311,13 @@ export default class GUIBase {
         this._createCloseButton(popupMain, overlay)
 
         this.activePopupElement = overlay
+        if (this._popGuiKeyHandler) return
+        this._popGuiKeyHandler = register("guiKey", (char, keyc, gui, evn) => {
+            if (!this.activePopupElement || keyc !== 1 || !this.activePopupElement.getParent()) return
+            this.activePopupElement.getParent().removeChild(this.activePopupElement)
+            this.activePopupElement = null
+            cancel(evn)
+        })
     }
 
     /**
