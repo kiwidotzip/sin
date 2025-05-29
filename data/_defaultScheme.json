@@ -9,6 +9,8 @@
         },
         "element": {
             "color": [40, 40, 40, 255],
+            "titleColor": [60, 60, 60, 255],
+            "titleHover": [80, 80, 80, 255],
             "hoverColor": [50, 50, 50, 255],
             "text": [220, 220, 220, 255],
             "popUp": {

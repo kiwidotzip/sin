@@ -1,9 +1,24 @@
 import ElementUtils from "../../DocGuiLib/core/Element"
 import HandleGui from "../../DocGuiLib/core/Gui"
 import HandleRegisters from "../../DocGuiLib/listeners/Registers"
-import { UIRoundedRectangle, Window, UIText, UIWrappedText, CenterConstraint, CramSiblingConstraint, ChildBasedSizeConstraint, PixelConstraint, ScrollComponent, animate, Animations, ConstantColorConstraint } from "../../Elementa"
+import { UIRoundedRectangle, Window, UIText, UIWrappedText, CenterConstraint, CramSiblingConstraint, ChildBasedSizeConstraint, PixelConstraint, ScrollComponent, animate, Animations, ConstantColorConstraint, SVGParser, SVGComponent, AdditiveConstraint } from "../../Elementa"
 import { CustomGui } from "../../DocGuiLib/core/CustomGui"
-import { SwitchElement, TextInputElement, SliderElement, DropdownElement, ColorPickerElement, KeybindElement, ButtonElement } from "./elements"
+import { SwitchElement, TextInputElement, SliderElement, DropdownElement, KeybindElement, ButtonElement } from "./elements"
+
+const SAXReader = Java.type("gg.essential.elementa.impl.dom4j.io.SAXReader")
+const Document = Java.type("gg.essential.elementa.impl.dom4j.Document").class
+const FileInputStream = Java.type("java.io.FileInputStream")
+const parseDocument = SVGParser.getClass().getDeclaredMethod("parseDocument", Document)
+parseDocument.setAccessible(true)
+
+const parseFromResource = (path) => {
+    let reader = new SAXReader()
+    let stream = new FileInputStream(path)
+    let document = reader.read(stream)
+    return parseDocument.invoke(SVGParser, document)
+}
+
+let defaultSVG = parseFromResource("./config/ChatTriggers/modules/sin/assets/box.svg")
 
 /** @typedef {import('./elements').ElementConfig} ElementConfig */
 /** @typedef {'button'|'switch'|'textinput'|'slider'|'dropdown'|'colorpicker'|'keybind'} ElementType */
@@ -36,7 +51,7 @@ export default class GUIBase {
                 }
             },
             element: {
-                width: 93,
+                width: 92,
                 subelem: {
                     width: 60,
                     height: 20,
@@ -193,9 +208,27 @@ export default class GUIBase {
                 .setHeight((100).percent())
                 .setColor(ElementUtils.getJavaColor(bgColor))
                 .setChildOf(categoryButton)
-                
+            const svgCont = new UIRoundedRectangle(0)
+                .setX((0).percent())
+                .setY((0).percent())
+                .setWidth((25).percent())
+                .setHeight((100).percent())
+                .setColor(ElementUtils.getJavaColor([0, 0, 0, 0]))
+                .setChildOf(categoryButton)
+            new SVGComponent(category.svg ? parseFromResource(category.svg) : defaultSVG)
+                .setX(new CenterConstraint())
+                .setY(new CenterConstraint())
+                .setWidth((100).percent())
+                .setHeight((80).percent())
+                .setChildOf(svgCont)
             this._setupButtonHover(bgComponent, bgColor)
-            this._createCategoryText(categoryButton, category.name, isActive)
+            new UIWrappedText(category.name, true, null, false, true)
+                .setX((25).percent())
+                .setY(new CenterConstraint())
+                .setWidth((100).percent())
+                .setTextScale((1.3).pixels())
+                .setColor(ElementUtils.getJavaColor(isActive ? this.scheme.Sin.accent : this.scheme.Sin.element.text))
+                .setChildOf(categoryButton)
         })
     }
 
@@ -214,7 +247,7 @@ export default class GUIBase {
             .setX((0).percent())
             .setY((0).percent())
             .setWidth((100).percent())
-            .setHeight(new PixelConstraint(Math.ceil(category.elements.length / 3) * 92))
+            .setHeight(new PixelConstraint(Math.ceil(category.elements.length / 4) * 94))
             .setColor(ElementUtils.getJavaColor([0, 0, 0, 0]))
             .setChildOf(this.elementBox)
 
@@ -245,22 +278,6 @@ export default class GUIBase {
 
     /**
      * @private
-     * @param {UIRoundedRectangle} parent 
-     * @param {string} text 
-     * @param {boolean} isActive 
-     */
-    _createCategoryText(parent, text, isActive) {
-        new UIWrappedText(text, true, null, true, true)
-            .setX((0).percent())
-            .setY(new CenterConstraint())
-            .setWidth((100).percent())
-            .setTextScale((1.3).pixels())
-            .setColor(ElementUtils.getJavaColor(isActive ? this.scheme.Sin.accent : this.scheme.Sin.element.text))
-            .setChildOf(parent)
-    }
-
-    /**
-     * @private
      * @param {object} element 
      * @returns {UIRoundedRectangle}
      */
@@ -268,20 +285,42 @@ export default class GUIBase {
         const card = new UIRoundedRectangle(5)
             .setX(new CramSiblingConstraint(15))
             .setY(new CramSiblingConstraint(15))
-            .setWidth((30).percent())
+            .setWidth((22).percent())
             .setHeight((80).pixels())
             .setColor(ElementUtils.getJavaColor(this.scheme.Sin.element.color))
             .onMouseClick(() => this._createElementPopup(element))
-            .onMouseEnter(() => this._animateColor(card, this.scheme.Sin.element.hoverColor))
-            .onMouseLeave(() => this._animateColor(card, this.scheme.Sin.element.color))
+            .onMouseEnter(() => { 
+                this._animateColor(card, this.scheme.Sin.element.hoverColor)
+                this._animateColor(CardTitle, this.scheme.Sin.element.titleHover)
+            })
+            .onMouseLeave(() => {
+                this._animateColor(card, this.scheme.Sin.element.color)
+                this._animateColor(CardTitle, this.scheme.Sin.element.titleColor)
+            })
 
-        new UIWrappedText(element.name, true, null, true, true)
+        new SVGComponent(element.svg ? parseFromResource(element.svg) : defaultSVG)
+            .setX(new CenterConstraint())
+            .setY(new CramSiblingConstraint())
+            .setWidth((60).percent())
+            .setHeight((80).percent())
+            .setChildOf(card)
+
+        const CardTitle = new UIRoundedRectangle(3)
+            .setX((0).percent())
+            .setY((80).percent())
+            .setWidth((100).percent())
+            .setHeight(new AdditiveConstraint(new ChildBasedSizeConstraint(), new PixelConstraint(10)))
+            .setColor(ElementUtils.getJavaColor(this.scheme.Sin.element.titleColor))
+            .setChildOf(card)
+        let displayName = element.name
+        if (displayName.length > 18) displayName = displayName.slice(0, 18 - 1) + "…"
+        new UIWrappedText(displayName, true, null, true, true, 9.0, "")
             .setX(new CenterConstraint())
             .setY(new CenterConstraint())
-            .setWidth((90).percent())
-            .setTextScale(1.5.pixels())
+            .setWidth((100).percent())
+            .setTextScale((1.2).pixels())
             .setColor(ElementUtils.getJavaColor(this.scheme.Sin.accent))
-            .setChildOf(card)
+            .setChildOf(CardTitle)
 
         return card
     }
@@ -301,7 +340,8 @@ export default class GUIBase {
             .setChildOf(this.rightBlock)
 
         const popupMain = new UIRoundedRectangle(5)
-            .setX(new CenterConstraint()).setY(new CenterConstraint())
+            .setX(new CenterConstraint())
+            .setY(new CenterConstraint())
             .setWidth((90).percent()).setHeight((90).percent())
             .setColor(ElementUtils.getJavaColor(this.scheme.Sin.element.popUp.menu))
             .setChildOf(overlay)
@@ -408,7 +448,7 @@ export default class GUIBase {
                     .setChildOf(TitleText)
             }
             
-            if (subElem.description) 
+            if (subElem.description)
                 new UIWrappedText(subElem.description, true, null, false, false, 10)
                     .setX((this.SinGUI.element.subelem.description.padding).percent())
                     .setY(new CenterConstraint())
@@ -459,7 +499,7 @@ export default class GUIBase {
         const componentMap = {
             button: () => new ButtonElement(subElem.title)
                 .setColorScheme(this.scheme)
-                .on('click', () => this._triggerEvent(subElem.onClick)),
+                .on('click', () => subElem.onClick(this.config, this)),
             switch: () => new SwitchElement(currentValue)
                 .setColorScheme(this.scheme)
                 .on('change', val => this._updateConfig(subElem.configName, val)),
@@ -472,9 +512,6 @@ export default class GUIBase {
             dropdown: () => new DropdownElement(subElem.options, currentValue)
                 .setColorScheme(this.scheme)
                 .on('change', val => this._updateConfig(subElem.configName, val)),
-            colorpicker: () => new ColorPickerElement(currentValue)
-                .setColorScheme(this.scheme)
-                .on('change', val => this.config[subElem.configName] = val),
             keybind: () => new KeybindElement(currentValue)
                 .setColorScheme(this.scheme)
                 .on('change', val => this.config[subElem.configName] = val)
@@ -512,14 +549,6 @@ export default class GUIBase {
             .onMouseClick(() => overlay.getParent().removeChild(overlay))
             .onMouseEnter(() => this._animateColor(closeBtn, this.scheme.Sin.element.closeButton.hover))
             .onMouseLeave(() => this._animateColor(closeBtn, this.scheme.Sin.element.closeButton.normal))
-    }
-    
-    /**
-     * @private
-     * @param {Function} event 
-     */
-    _triggerEvent(event) {
-        typeof event === "function" && event(this.config, this)
     }
 
     /**
@@ -737,6 +766,35 @@ export default class GUIBase {
             .forEach(k => settings[k] = this[k].bind(this))
         
         return settings
+    }
+
+    /**
+     * Adds a custom SVG to a category by name.
+     * @param {string} categoryName
+     * @param {string} svgPath
+     * @example
+     * "./config/ChatTriggers/modules/sin/assets/box.svg" // Path example
+     * @returns this for chaining
+     */
+    addCatSVG(categoryName, svgPath) {
+        const category = this.categories.find(c => c.name === categoryName)
+        if (category) category.svg = svgPath
+        return this
+    }
+
+    /**
+     * Adds a custom SVG to a subcategory by name.
+     * @param {string} categoryName
+     * @param {string} subcategoryName
+     * @param {string} svgPath
+     * @returns this for chaining
+     */
+    addSubCatSVG(categoryName, subcategoryName, svgPath) {
+        const category = this.categories.find(c => c.name === categoryName)
+        if (!category) return
+        const subcategory = category.elements.find(e => e.name === subcategoryName)
+        if (subcategory) subcategory.svg = svgPath
+        return this
     }
 
     /**
