@@ -1,11 +1,11 @@
-import { Animations, CenterConstraint, PixelConstraint, SubtractiveConstraint, ScrollComponent, UIRoundedRectangle, UIText, UITextInput, animate, AspectConstraint, ConstantColorConstraint } from "../../Elementa"
+import { Animations, CenterConstraint, CramSiblingConstraint, GradientComponent, SubtractiveConstraint, UIBlock, PixelConstraint, RelativeConstraint, ScrollComponent, UIRoundedRectangle, UIText, UITextInput, animate, AspectConstraint, ConstantColorConstraint } from "../../Elementa"
 import ElementUtils from "../../DocGuiLib/core/Element"
 const Color = java.awt.Color
 
 // Color picker dependencies
 const UMatrixStack = Java.type("gg.essential.universal.UMatrixStack")
 const UGraphics = Java.type("gg.essential.universal.UGraphics")
-const hueColors = new Array(50).fill(null).map((_, idx) => new Color(Color.HSBtoRGB(idx / 50, 1, 0.7)))
+const hueColors = new Array(50).fill(null).map((_, idx) => ElementUtils.getJavaColor(Color.HSBtoRGB(idx / 50, 1, 0.7)))
 
 /**
  * Base class for all UI elements providing common functionality
@@ -28,7 +28,7 @@ class BaseElement {
 
     /**
      * Sets the color scheme for this element
-     * @param {Object} scheme - Color scheme object containing Sin property
+     * @param {Object} scheme - Color scheme object
      * @returns {BaseElement} This element for chaining
      */
     setColorScheme(scheme) {
@@ -98,7 +98,8 @@ export class SwitchElement extends BaseElement {
      * @returns {UIRoundedRectangle} The main switch background component
      */
     create() {
-        const bg = new UIRoundedRectangle(this._getValue('base.roundness')).setColor(this._getColor('switch.handle'))
+        const bg = new UIRoundedRectangle(this._getValue('base.roundness'))
+            .setColor(this._getColor('switch.handle'))
         const handle = new UIRoundedRectangle(this._getValue('base.roundness'))
             .setX(this.isOn ? (70).percent() : (3).percent())
             .setY(new CenterConstraint())
@@ -282,8 +283,14 @@ export class SliderElement extends BaseElement {
         Object.assign(this, { bg, thumb, valueText })
 
         const handlers = {
-            click: () => { this.isDragging = true; this.offset = 1 },
-            release: () => { this.isDragging = false; this.offset = 0 },
+            click: () => {
+                this.isDragging = true
+                this.offset = 1 
+            },
+            release: () => {
+                this.isDragging = false
+                this.offset = 0 
+            },
             drag: (component, x) => {
                 if (!this.isDragging || !this.offset) return
                 const padding = 2.5
@@ -476,7 +483,7 @@ export class KeybindElement extends BaseElement {
             bg.setColor(this._getColor('keybind.active'))
         })
 
-        register('guiKey', (char, keyCode) => {CREATE
+        register('guiKey', (char, keyCode) => {
             if (!this.listening) return
             Object.assign(this, { value: keyCode, listening: false })
             bg.setColor(this._getColor('keybind.background'))

@@ -3,7 +3,7 @@ import HandleGui from "../../DocGuiLib/core/Gui"
 import HandleRegisters from "../../DocGuiLib/listeners/Registers"
 import { UIRoundedRectangle, Window, UIText, UIWrappedText, CenterConstraint, CramSiblingConstraint, ChildBasedSizeConstraint, PixelConstraint, ScrollComponent, animate, Animations, ConstantColorConstraint, SVGParser, SVGComponent, AdditiveConstraint } from "../../Elementa"
 import { CustomGui } from "../../DocGuiLib/core/CustomGui"
-import { SwitchElement, TextInputElement, SliderElement, DropdownElement, KeybindElement, ButtonElement } from "./elements"
+import { SwitchElement, TextInputElement, SliderElement, DropdownElement, KeybindElement, ButtonElement, ColorPickerElement } from "./elements"
 
 const SAXReader = Java.type("gg.essential.elementa.impl.dom4j.io.SAXReader")
 const Document = Java.type("gg.essential.elementa.impl.dom4j.Document").class
