@@ -62,8 +62,8 @@ export default class Config extends Base {
         this._subElements = new Map()
         this._originalHeights = new Map()
         this.listeners = new Map()
-        this.onOpenGui = []
-        this.onCloseGui = []
+        this._onOpenGui = []
+        this._onCloseGui = []
         this._loadConfig()
         register("gameUnload", () => this._saveConfig())
     }
@@ -82,9 +82,9 @@ export default class Config extends Base {
             regs.eventsList.clear()
         }
         this.handler.ctGui.registerInit(() => Keyboard.enableRepeatEvents(true))
-        this.handler.registers.onOpen(() => this.onOpenGui.forEach(fn => fn()))
+        this.handler.registers.onOpen(() => this._onOpenGui.forEach(fn => fn()))
         this.handler.registers.onClose(() => {
-            this.onCloseGui.forEach(fn => fn())
+            this._onCloseGui.forEach(fn => fn())
             Keyboard.enableRepeatEvents(false)
             this.listeners.clear()
         })
@@ -214,7 +214,7 @@ export default class Config extends Base {
      * @returns this for chaining
      */
     onOpenGui(fn) {
-        this.onOpenGui.push(fn)
+        this._onOpenGui.push(fn)
         return this
     }
 
@@ -224,7 +224,7 @@ export default class Config extends Base {
      * @returns this for chaining
      */
     onCloseGui(fn) {
-        this.onCloseGui.push(fn)
+        this._onCloseGui.push(fn)
         return this
     }
 
