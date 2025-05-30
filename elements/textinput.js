@@ -1,5 +1,5 @@
 import BaseElement from "./base"
-import { UIRoundedRectangle, UITextInput, UIText, CenterConstraint } from "../../../Elementa"
+import { UIRoundedRectangle, UITextInput, UIText, CenterConstraint } from "../../Elementa"
 
 /**
  * Text input field element for string input

@@ -1,5 +1,5 @@
 import BaseElement from "./base"
-import { UIRoundedRectangle, ConstantColorConstraint, CenterConstraint, UIText, Animations, animate } from "../../../Elementa"
+import { UIRoundedRectangle, ConstantColorConstraint, CenterConstraint, UIText, Animations, animate } from "../../Elementa"
 
 /**
  * Button element for triggering actions

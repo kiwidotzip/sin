@@ -1,5 +1,5 @@
 import BaseElement from "./base"
-import { UIRoundedRectangle, CenterConstraint, AspectConstraint, Animations, animate } from "../../../Elementa"
+import { UIRoundedRectangle, CenterConstraint, AspectConstraint, Animations, animate } from "../../Elementa"
 
 /**
  * Toggle switch element for boolean input

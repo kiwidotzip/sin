@@ -1,6 +1,6 @@
 import BaseElement from "./base"
-import { UIRoundedRectangle, UIContainer, UIText, UITextInput, CenterConstraint } from "../../../Elementa"
-import ElementUtils from "../../../DocGuiLib/core/Element"
+import { UIRoundedRectangle, UIContainer, UIText, UITextInput, CenterConstraint } from "../../Elementa"
+import ElementUtils from "../../DocGuiLib/core/Element"
 
 export default class ColorPickerElement extends BaseElement {
     constructor(value = [255, 255, 255, 255]) {

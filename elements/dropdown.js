@@ -1,5 +1,5 @@
 import BaseElement from "./base"
-import { UIRoundedRectangle, UIText, ScrollComponent, CenterConstraint, PixelConstraint } from "../../../Elementa"
+import { UIRoundedRectangle, UIText, ScrollComponent, CenterConstraint, PixelConstraint } from "../../Elementa"
 
 /**
  * Dropdown selection element for choosing from multiple options

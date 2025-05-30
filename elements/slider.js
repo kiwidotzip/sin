@@ -1,5 +1,5 @@
 import BaseElement from "./base"
-import { UIRoundedRectangle, UIText, CenterConstraint, SubtractiveConstraint, animate, Animations } from "../../../Elementa"
+import { UIRoundedRectangle, UIText, CenterConstraint, SubtractiveConstraint, animate, Animations } from "../../Elementa"
 
 /**
  * Slider input element for numeric value selection within a range

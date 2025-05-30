@@ -1,4 +1,4 @@
-import { ElementUtils } from "../../../DocGuiLib/core/Element"
+import { ElementUtils } from "../../DocGuiLib/core/Element"
 
 /**
  * Base class for all UI elements providing common functionality
