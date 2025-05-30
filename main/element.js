@@ -15,7 +15,7 @@ export default class Base {
      */
     static applyTo(proto) {
         Object.getOwnPropertyNames(Base.prototype).forEach(name => {
-            if (name !== 'constructor' && name !== 'applyTo') proto[name] = GUIBaseElements.prototype[name]
+            if (name !== 'constructor' && name !== 'applyTo') proto[name] = Base.prototype[name]
         })
     }
 

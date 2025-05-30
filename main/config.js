@@ -18,11 +18,7 @@ export default class ConfigMethods {
             if (!saved) return
             const data = JSON.parse(saved)
             this.config = {}
-            data.forEach(category =>
-                category.settings.forEach(setting => {
-                    this.config[setting.name] = setting.value
-                })
-            )
+            data.forEach(category => category.settings.forEach(setting =>this.config[setting.name] = setting.value))
         } catch(e) {
             ChatLib.chat(`&b[SIN] &fFailed to load config for &c${this.moduleName}&f: &c${e}`)
         }
