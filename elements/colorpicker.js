@@ -2,12 +2,26 @@ import BaseElement from "./base"
 import { UIRoundedRectangle, UIContainer, UIText, UITextInput, CenterConstraint } from "../../Elementa"
 import ElementUtils from "../../DocGuiLib/core/Element"
 
+/**
+ * Color picker element with RGBA inputs and color preview
+ * @class ColorPickerElement
+ * @extends BaseElement
+ * @fires change - When color value changes (arguments: new color array [r, g, b, a])
+ */
 export default class ColorPickerElement extends BaseElement {
+    /**
+     * Creates a new ColorPickerElement
+     * @param {number[]} [value=[255, 255, 255, 255]] - Initial RGBA color values
+     */
     constructor(value = [255, 255, 255, 255]) {
         super(0, 0, 0, 0, value, null, 'colorpicker')
         this.color = value
     }
 
+    /**
+     * Creates and returns the UI component for the color picker
+     * @returns {UIContainer} The root container element
+     */
     create() {
         const scheme = this.colorScheme.element.colorPicker
         const textInputScheme = scheme.textInput?.normal || { background: [40,40,40,255], text: [220,220,220,255] }
