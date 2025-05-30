@@ -7,7 +7,7 @@ import { UIRoundedRectangle, UIText, CenterConstraint } from "../../Elementa"
  * @extends BaseElement
  * @fires change - When keybind changes, passes key code
  */
-export class KeybindElement extends BaseElement {
+export default class KeybindElement extends BaseElement {
     /**
      * Creates a new KeybindElement
      * @param {number} [key=0] - Initial key code (0 = no key bound)

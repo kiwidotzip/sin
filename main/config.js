@@ -4,8 +4,8 @@ export default class ConfigMethods {
      * @param {Object} proto 
      */
     static applyTo(proto) {
-        Object.getOwnPropertyNames(GUIBaseConfig.prototype).forEach(name => {
-            if (name !== 'constructor' && name !== 'applyTo') proto[name] = GUIBaseConfig.prototype[name]
+        Object.getOwnPropertyNames(ConfigMethods.prototype).forEach(name => {
+            if (name !== 'constructor' && name !== 'applyTo') proto[name] = ConfigMethods.prototype[name]
         })
     }
 

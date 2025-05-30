@@ -275,5 +275,5 @@ export default class Config extends Base {
     }
 }
 
-ConfMethods.applyTo(GUIBase.prototype)
-Base.applyTo(GUIBase.prototype)
+ConfMethods.applyTo(Config.prototype)
+Base.applyTo(Config.prototype)
