@@ -3,6 +3,5 @@
     "author"        : "Kiwi",
     "description"   : "love cats - /ct import meowaddons",
     "version"       : "1.0.0",
-    "entry"         : "index.js",
     "requires"      : ["Elementa", "DocGuiLib"]
 }
