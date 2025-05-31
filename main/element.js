@@ -9,14 +9,14 @@ import TextParagraphElement from "../elements/textparagraph"
 import { UIRoundedRectangle, UIText, UIWrappedText, CenterConstraint, CramSiblingConstraint, ChildBasedSizeConstraint, PixelConstraint, ScrollComponent, animate, Animations, ConstantColorConstraint } from "../../Elementa"
 import ElementUtils from "../../DocGuiLib/core/Element"
 
-export default class Base {
+export default class GUI {
     /**
      * @private
      * @param {Object} proto 
      */
     static applyTo(proto) {
-        Object.getOwnPropertyNames(Base.prototype).forEach(name => {
-            if (name !== 'constructor' && name !== 'applyTo') proto[name] = Base.prototype[name]
+        Object.getOwnPropertyNames(GUI.prototype).forEach(name => {
+            if (name !== 'constructor' && name !== 'applyTo') proto[name] = GUI.prototype[name]
         })
     }
 

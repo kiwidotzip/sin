@@ -1,12 +1,12 @@
 import HandleGui from "../../DocGuiLib/core/Gui"
 import HandleRegisters from "../../DocGuiLib/listeners/Registers"
-import Base from './element'
+import GUI from './element'
 import { Window } from "../../Elementa"
 import { CustomGui } from "../../DocGuiLib/core/CustomGui"
 
 /** @typedef {import('./elements').ElementConfig} ElementConfig */
 /** @typedef {'button'|'switch'|'textinput'|'slider'|'dropdown'|'colorpicker'|'textparagraph'|'keybind'} ElementType */
-export default class Config extends Base {
+export default class Config extends GUI {
     /**
      * @param {string} moduleName The name of the module
      * @param {string} schemePath The color scheme path
@@ -357,4 +357,4 @@ export default class Config extends Base {
     }
 }
 
-Base.applyTo(Config.prototype)
+GUI.applyTo(Config.prototype)
