@@ -137,6 +137,11 @@ export default class Config extends GUI {
     _updateConfig(key, newVal) {
         const oldVal = this.config[key]
         this.config[key] = newVal
+        this.categories.forEach(category => 
+            category.elements.forEach(subcategory => 
+                subcategory.subElements.forEach(element => 
+                    (element.configName === key && element.registerListener) && element.registerListener(oldVal, newVal)))
+        )
         this._subElements.forEach((_, configName) => 
             this._subElements.get(configName).shouldShow?.toString()?.includes(key) && 
             this._updateElementVisibility(configName)
@@ -314,19 +319,6 @@ export default class Config extends GUI {
     setSize(width, height) {
         width && (this.SinGUI.background.width = width)
         height && (this.SinGUI.background.height = height)
-        return this
-    }
-
-    /**
-     * Applies the changes made to the GUI
-     * @returns this for chaining
-     */
-    apply() {
-        this.categories = []
-        this.isInitialized = false
-        this.currentContent = null
-        this.activeCategory = null
-        this._createGUI()
         return this
     }
 
