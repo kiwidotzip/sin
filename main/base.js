@@ -318,14 +318,15 @@ export default class Config extends GUI {
     }
 
     /**
-     * Sets the GUI pos
-     * @param {number} [x]
-     * @param {number} [y]
+     * Applies the changes made to the GUI
      * @returns this for chaining
      */
-    setPos(x, y) {
-        x && (this.SinGUI.background.margins.x = x)
-        y && (this.SinGUI.background.margins.y = y)
+    apply() {
+        this.categories = []
+        this.isInitialized = false
+        this.currentContent = null
+        this.activeCategory = null
+        this._createGUI()
         return this
     }
 
