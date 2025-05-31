@@ -16,6 +16,7 @@ export default class TextInputElement extends BaseElement {
     constructor(value = "", placeholder = "") {
         super(0, 0, 0, 0, value, null, "textInput")
         this.placeholder = placeholder
+        this.text = value
     }
 
     /**
@@ -31,15 +32,18 @@ export default class TextInputElement extends BaseElement {
             .setHeight(this.height.percent())
             .setColor(this._getColor('textInput.normal.background'))
 
-        const input = new UITextInput(this.value ?? "", true)
+        const input = new UITextInput(this.text ?? "", true)
             .setX((10).percent())
             .setY(new CenterConstraint())
-            .setWidth((100).percent())
+            .setWidth((90).percent())
             .setHeight((10).pixels())
             .setColor(this._getColor('textInput.normal.text'))
             .setChildOf(bg)
 
-        bg.onMouseClick(() => input.grabWindowFocus())
+        bg.onMouseClick(() => {
+            if (this.text) input.setText(this.text)
+            input.grabWindowFocus()
+        })
 
         if (this.placeholder) {
             const placeholderText = new UIText(this.placeholder)
@@ -48,13 +52,16 @@ export default class TextInputElement extends BaseElement {
                 .setColor(this._getColor('textInput.placeholder'))
                 .setChildOf(bg)
             
-            this.value === "" ? placeholderText.unhide(true) : placeholderText.hide()
+            this.text === "" ? placeholderText.unhide(true) : placeholderText.hide()
 
-            input.onKeyType(() => {
-                const placeholder = bg.getChildren().find(child => child instanceof UIText && child.getText() === this.placeholder)
-                placeholder && (input.getText().length > 0 ? placeholder.hide() : placeholder.show())
-                this._trigger('change', input.getText())
-            })
+            input
+                .onKeyType(() => {
+                    this.text = input.getText()
+                    const placeholder = bg.getChildren().find(child => child instanceof UIText && child.getText() === this.placeholder)
+                    placeholder && (this.text.length > 0 ? placeholder.hide() : placeholder.unhide(true))
+                    this._trigger('change', this.text)
+                })
+                .onFocusLost(() => this._trigger('change', input.getText()))
         }
         return bg
     }

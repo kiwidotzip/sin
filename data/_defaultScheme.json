@@ -9,13 +9,10 @@
         },
         "element": {
             "color": [40, 40, 40, 255],
-            "titleColor": [60, 60, 60, 255],
-            "titleHover": [80, 80, 80, 255],
             "hoverColor": [50, 50, 50, 255],
             "text": [220, 220, 220, 255],
             "popUp": {
-                "menu": [30, 30, 30, 255],
-                "text": [102, 255, 204, 255]
+                "menu": [30, 30, 30, 255]
             },
             "closeButton": {
                 "normal": [60, 60, 60, 255],
@@ -24,96 +21,51 @@
             "button": {
                 "normal": {
                     "background": [45, 45, 45, 255],
-                    "border": [60, 60, 60, 255],
                     "text": [102, 255, 204, 255]
                 },
                 "pressed": {
-                    "background": [60, 60, 60, 255],
-                    "border": [80, 80, 80, 255],
-                    "text": [30, 30, 30, 255]
+                    "background": [60, 60, 60, 255]
                 },
                 "roundness": 6,
-                "borderSize": 1.5,
                 "textScale": 1.1
             },
             "textInput": {
                 "normal": {
                     "background": [35, 35, 35, 255],
-                    "border": [60, 60, 60, 255],
                     "text": [220, 220, 220, 255]
                 },
-                "focus": {
-                    "background": [45, 45, 45, 255],
-                    "border": [102, 255, 204, 255],
-                    "text": [255, 255, 255, 255]
-                },
                 "placeholder": [120, 120, 120, 255],
-                "roundness": 6,
-                "borderSize": 1.5,
-                "textScale": 1.0
+                "roundness": 6
             },
             "switch": {
                 "onColor": [102, 255, 204, 255],
                 "offColor": [241, 130, 141, 255],
-                "handle": [60, 60, 60, 255],
-                "border": [70, 70, 70, 255],
-                "text": [220, 220, 220, 255]
+                "handle": [60, 60, 60, 255]
             },
             "dropdown": {
                 "background": [35, 35, 35, 255],
                 "itemHover": [50, 50, 50, 255],
                 "selected": [102, 255, 204, 255],
-                "text": [220, 220, 220, 255],
-                "border": [60, 60, 60, 255]
+                "text": [220, 220, 220, 255]
             },
             "slider": {
                 "track": [50, 50, 50, 255],
                 "thumb": [102, 255, 204, 255],
-                "valueText": [180, 180, 180, 255],
-                "border": [70, 70, 70, 255]
+                "valueText": [180, 180, 180, 255]
             },
             "colorPicker": {
-                "background": [35, 35, 35, 255],
-                "outline": [60, 60, 60, 255],
-                "outlineSize": 1.5,
-                "gradient": {
-                    "background": [30, 30, 30, 255],
-                    "outline": [60, 60, 60, 255],
-                    "outlineSize": 1
-                },
-                "hue": {
-                    "background": [40, 40, 40, 255],
-                    "outline": [60, 60, 60, 255],
-                    "outlineSize": 1
-                },
-                "pointer": {
-                    "outline": [255, 255, 255, 255],
-                    "outlineSize": 1
-                },
-                "alphaSlider": {
-                    "track": [50, 50, 50, 255],
-                    "thumb": [102, 255, 204, 255],
-                    "border": [60, 60, 60, 255]
-                },
-                "text": [220, 220, 220, 255],
+                "roundness": 5,
                 "textInput": {
                     "normal": {
                         "background": [40, 40, 40, 255],
                         "text": [220, 220, 220, 255]
-                    },
-                    "focus": {
-                        "background": [50, 50, 50, 255],
-                        "text": [255, 255, 255, 255]
                     }
-                },
-                "previewBorder": [102, 255, 204, 255],
-                "roundness": 5
+                }
             },
             "keybind": {
                 "background": [40, 40, 40, 255],
                 "active": [102, 255, 204, 255],
-                "text": [220, 220, 220, 255],
-                "border": [60, 60, 60, 255]
+                "text": [220, 220, 220, 255]
             },
             "textParagraph": {
                 "text": [180, 180, 180, 255]
@@ -129,11 +81,7 @@
             "paragraph": {
                 "color": [180, 180, 180, 255],
                 "scale": 0.95
-            },
-            "disabled": [100, 100, 100, 255]
-        },
-        "title": {
-            "scale": 1.5
+            }
         },
         "base": {
             "roundness": 5,
