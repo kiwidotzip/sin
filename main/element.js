@@ -213,6 +213,7 @@ export default class Base {
      */
     _createElementPopup(element) {
         this.activeElement = element
+        this.activeDropdowns = []
         const overlay = new UIRoundedRectangle(0)
             .setX((0).percent())
             .setY((0).percent())
@@ -236,6 +237,8 @@ export default class Base {
         if (this._popGuiKeyHandler) return
         this._popGuiKeyHandler = register("guiKey", (char, keyc, gui, evn) => {
             if (!this.activePopupElement || keyc !== 1 || !this.activePopupElement.getParent()) return
+            this.activeDropdowns.forEach(d => d.closeDropdown())
+            this.activeDropdowns = []
             this.activePopupElement.getParent().removeChild(this.activePopupElement)
             this.activePopupElement = null
             cancel(evn)
@@ -344,16 +347,16 @@ export default class Base {
 
             const component = this._createComponent(subElem)
             subElem.type === 'colorpicker' 
-            ? component.create() 
-                .setX((3).percent())
-                .setY(new CenterConstraint())
-                .setChildOf(card)
-            : component.create()
-                .setX((3).percent())
-                .setY(new CenterConstraint())
-                .setWidth((this.SinGUI.element.subelem.width).pixels())
-                .setHeight((this.SinGUI.element.subelem.height).pixels())
-                .setChildOf(card)
+                ? component.create() 
+                    .setX((3).percent())
+                    .setY(new CenterConstraint())
+                    .setChildOf(card)
+                : component.create()
+                    .setX((3).percent())
+                    .setY(new CenterConstraint())
+                    .setWidth((this.SinGUI.element.subelem.width).pixels())
+                    .setHeight((this.SinGUI.element.subelem.height).pixels())
+                    .setChildOf(card)
             previousElement = outerContainer
         })
     }
@@ -372,6 +375,24 @@ export default class Base {
             ? container && container.setHeight(originalHeight.pixels()).unhide(true)
             : container && container.setHeight((0).pixels()).hide(true)
         this.currentContent?.getParent()?.onWindowResize()
+    }
+    
+    /**
+     * Returns the default value for a config element based on its type.
+     * @private
+     * @param {object} element
+     */
+    _getDefaultValue(element) {
+        switch (element.type) {
+            case "switch": return false
+            case "textinput": return element.placeHolder ?? ""
+            case "slider": return element.options[0]
+            case "dropdown": return element.options[0]
+            case "colorpicker": return [255, 255, 255, 255]
+            case "keybind": return "NONE"
+            case "button": 
+            default: return null 
+        }
     }
 
     /**
@@ -396,9 +417,13 @@ export default class Base {
                 .on('change', val => this._updateConfig(subElem.configName, val)),
             colorpicker: () => new ColorPickerElement(currentValue, this.rightBlock)
                 .setColorScheme(this.scheme),
-            dropdown: () => new DropdownElement(subElem.options, currentValue)
-                .setColorScheme(this.scheme)
-                .on('change', val => this._updateConfig(subElem.configName, val)),
+            dropdown: () => {
+                const dropdown = new DropdownElement(subElem.options, currentValue)
+                    .setColorScheme(this.scheme)
+                    .on('change', val => this._updateConfig(subElem.configName, val))
+                this.activeDropdowns.push(dropdown)
+                return dropdown
+            },
             keybind: () => new KeybindElement(currentValue)
                 .setColorScheme(this.scheme)
                 .on('change', val => this.config[subElem.configName] = val)
@@ -418,7 +443,11 @@ export default class Base {
             .setTextScale(1.5.pixels())
             .setColor(ElementUtils.getJavaColor(this.scheme.Sin.element.closeButton.normal))
             .setChildOf(parent)
-            .onMouseClick(() => overlay.getParent().removeChild(overlay))
+            .onMouseClick(() => {
+                this.activeDropdowns.forEach(d => d.closeDropdown())
+                this.activeDropdowns = []
+                overlay.getParent().removeChild(overlay)
+            })
             .onMouseEnter(() => this._animateColor(closeBtn, this.scheme.Sin.element.closeButton.hover))
             .onMouseLeave(() => this._animateColor(closeBtn, this.scheme.Sin.element.closeButton.normal))
     }

@@ -1,6 +1,5 @@
 import HandleGui from "../../DocGuiLib/core/Gui"
 import HandleRegisters from "../../DocGuiLib/listeners/Registers"
-import ConfMethods from './config'
 import Base from './element'
 import { Window } from "../../Elementa"
 import { CustomGui } from "../../DocGuiLib/core/CustomGui"
@@ -58,6 +57,7 @@ export default class Config extends Base {
         this.currentContent = null
         this.activeElement = null
         this.activePopupElement = null
+        this.GuiScale = null
         this.isInitialized = false
         this._subElements = new Map()
         this._originalHeights = new Map()
@@ -76,18 +76,77 @@ export default class Config extends Base {
         const regs = this.handler.registers
         regs._stop = () => {
             if (regs.isCustom) return
-            for (const ev of regs.eventsList) {
-                if (ev && typeof ev.unregister === "function") ev.unregister()
-            }
+            for (const ev of regs.eventsList) (ev && typeof ev.unregister === "function") && ev.unregister()
             regs.eventsList.clear()
         }
         this.handler.ctGui.registerInit(() => Keyboard.enableRepeatEvents(true))
-        this.handler.registers.onOpen(() => this._onOpenGui.forEach(fn => fn()))
+        this.handler.registers.onOpen(() => {
+            this._onOpenGui.forEach(fn => fn())
+            if (Client.getMinecraft().field_71474_y.field_74335_Z === 2) return
+            this.GuiScale = Client.getMinecraft().field_71474_y.field_74335_Z
+            Client.getMinecraft().field_71474_y.field_74335_Z = 2
+        })
         this.handler.registers.onClose(() => {
             this._onCloseGui.forEach(fn => fn())
             Keyboard.enableRepeatEvents(false)
             this.listeners.clear()
+            if (Client.getMinecraft().field_71474_y.field_74335_Z !== 2 || !this.GuiScale || this.GuiScale === 2) return
+            Client.getMinecraft().field_71474_y.field_74335_Z = this.GuiScale
+            this.GuiScale = null
         })
+    }
+
+        /** @private */
+    _loadConfig() {
+        if (!this.configPath) return
+
+        try {
+            const saved = FileLib.read(this.moduleName, this.configPath)
+            if (!saved) return
+            const data = JSON.parse(saved)
+            this.config = {}
+            data.forEach(category => category.settings.forEach(setting =>this.config[setting.name] = setting.value))
+        } catch(e) {
+            ChatLib.chat(`&b[SIN] &fFailed to load config for &c${this.moduleName}&f: &c${e}`)
+        }
+    }
+
+    /** @private */
+    _saveConfig() {
+        if (!this.configPath) return
+        
+        try {
+            const data = this.categories.map(cat => ({
+                category: cat.name,
+                settings: [].concat(...cat.elements.map(sub => 
+                    sub.subElements
+                        .filter(e => e.configName)
+                        .map(e => ({
+                            name: e.configName,
+                            value: this.config[e.configName] ?? e.value ?? e.placeHolder ?? this._getDefaultValue(e)
+                        }))
+                ))
+            }))
+            
+            FileLib.write(this.moduleName, this.configPath, JSON.stringify(data, null, 4))
+        } catch(e) {
+            ChatLib.chat(`&b[SIN] &fFailed to save config for &c${this.moduleName}&f: &c${e}`)
+        }
+    }
+
+    /**
+     * @private
+     * @param {string} key 
+     * @param {any} value 
+     */
+    _updateConfig(key, newVal) {
+        const oldVal = this.config[key]
+        this.config[key] = newVal
+        this._subElements.forEach((_, configName) => 
+            this._subElements.get(configName).shouldShow?.toString()?.includes(key) && 
+            this._updateElementVisibility(configName)
+        )
+        this.listeners.forEach((meta, handler) => meta.any ? handler(oldVal, newVal, key) : handler(key, oldVal, newVal))
     }
 
     /** 
@@ -275,5 +334,4 @@ export default class Config extends Base {
     }
 }
 
-ConfMethods.applyTo(Config.prototype)
 Base.applyTo(Config.prototype)
