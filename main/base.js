@@ -354,6 +354,17 @@ export default class Config extends GUI {
     setValue(valueName, newvalue) {
         valueName && newvalue && (this.SinGUI[valueName] = newvalue)
     }
+    
+    /**
+     * Sets a config value and triggers updates
+     * @param {string} key Config key to update
+     * @param {any} newVal New value to set
+     * @returns this for chaining
+     */
+    setConfigValue(key, newVal) {
+        this._updateConfig(key, newVal)
+        return this
+    }
 }
 
 GUI.applyTo(Config.prototype)
