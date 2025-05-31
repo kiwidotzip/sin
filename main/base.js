@@ -29,11 +29,7 @@ export default class Config extends GUI {
                 width: 65,
                 leftRatio: 0.85,
                 rightRatio: 3.15,
-                height: 60,
-                margins: { 
-                    x: 0, 
-                    y: 15 
-                }
+                height: 60
             },
             element: {
                 width: 92,
@@ -354,7 +350,7 @@ export default class Config extends GUI {
     setValue(valueName, newvalue) {
         valueName && newvalue && (this.SinGUI[valueName] = newvalue)
     }
-    
+
     /**
      * Sets a config value and triggers updates
      * @param {string} key Config key to update

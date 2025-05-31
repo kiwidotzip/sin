@@ -30,7 +30,8 @@ export default class GUI {
         const rightWidth = (this.SinGUI.background.rightRatio / totalRatio) * 100
 
         this.mainBlock = new UIRoundedRectangle(0)
-            .setX(new CenterConstraint()).setY(new CenterConstraint())
+            .setX(new CenterConstraint())
+            .setY(new CenterConstraint())
             .setWidth(this.SinGUI.background.width.percent())
             .setHeight(this.SinGUI.background.height.percent())
             .setColor(ElementUtils.getJavaColor([255, 255, 255, 0]))
@@ -442,7 +443,8 @@ export default class GUI {
      */
     _createCloseButton(parent, overlay) {
         const closeBtn = new UIText("[✕]")
-            .setX((90).percent()).setY((12).pixels())
+            .setX((90).percent())
+            .setY((12).pixels())
             .setTextScale(1.5.pixels())
             .setColor(ElementUtils.getJavaColor(this.scheme.Sin.element.closeButton.normal))
             .setChildOf(parent)
