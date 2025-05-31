@@ -41,7 +41,7 @@ export default class TextInputElement extends BaseElement {
             .setChildOf(bg)
 
         bg.onMouseClick(() => {
-            if (this.text) input.setText(this.text)
+            input.setText(this.text)
             input.grabWindowFocus()
         })
 
@@ -53,16 +53,19 @@ export default class TextInputElement extends BaseElement {
                 .setChildOf(bg)
             
             this.text === "" ? placeholderText.unhide(true) : placeholderText.hide()
-
-            input
-                .onKeyType(() => {
-                    this.text = input.getText()
-                    const placeholder = bg.getChildren().find(child => child instanceof UIText && child.getText() === this.placeholder)
-                    placeholder && (this.text.length > 0 ? placeholder.hide() : placeholder.unhide(true))
-                    this._trigger('change', this.text)
-                })
-                .onFocusLost(() => this._trigger('change', input.getText()))
         }
+        
+        input
+            .onKeyType(() => {
+                this.text = input.getText()
+                const placeholder = bg.getChildren().find(child => child instanceof UIText && child.getText() === this.placeholder)
+                placeholder && (this.text.length > 0 ? placeholder.hide() : placeholder.unhide(true))
+                this._trigger('change', this.text)
+            })
+            .onFocusLost(() => {
+                this.text = input.getText()
+                this._trigger('change', this.text)
+            })
         return bg
     }
 }
