@@ -5,13 +5,13 @@ import { Window } from "../../Elementa"
 import { CustomGui } from "../../DocGuiLib/core/CustomGui"
 
 /** @typedef {import('./elements').ElementConfig} ElementConfig */
-/** @typedef {'button'|'switch'|'textinput'|'slider'|'dropdown'|'colorpicker'|'keybind'} ElementType */
+/** @typedef {'button'|'switch'|'textinput'|'slider'|'dropdown'|'colorpicker'|'textparagraph'|'keybind'} ElementType */
 export default class Config extends Base {
     /**
-     * @param {string} moduleName
-     * @param {string} schemePath
-     * @param {string} title
-     * @param {string} confPath
+     * @param {string} moduleName The name of the module
+     * @param {string} schemePath The color scheme path
+     * @param {string} title The title of the GUI
+     * @param {string} [confPath] The config path
      */
     constructor(moduleName, schemePath, title, confPath) {
         super()
@@ -197,6 +197,15 @@ export default class Config extends Base {
         return this._addElement('colorpicker', config)
     }
     
+
+    /**
+     * @param {ElementConfig} config 
+     * @returns this for chaining
+     */
+    addTextParagraph(config) {
+        return this._addElement('textparagraph', config)
+    }
+
     /** 
      * @param {ElementConfig} config 
      * @returns this for chaining

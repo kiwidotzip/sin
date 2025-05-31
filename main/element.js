@@ -5,6 +5,7 @@ import DropdownElement from "../elements/dropdown"
 import KeybindElement from "../elements/keybind"
 import ButtonElement from "../elements/button"
 import ColorPickerElement from "../elements/colorpicker"
+import TextParagraphElement from "../elements/textparagraph"
 import { UIRoundedRectangle, UIText, UIWrappedText, CenterConstraint, CramSiblingConstraint, ChildBasedSizeConstraint, PixelConstraint, ScrollComponent, animate, Animations, ConstantColorConstraint } from "../../Elementa"
 import ElementUtils from "../../DocGuiLib/core/Element"
 
@@ -332,7 +333,7 @@ export default class Base {
                     .setChildOf(TitleText)
             }
             
-            if (subElem.description && subElem.type !== 'colorpicker')
+            if (subElem.description && subElem.type !== 'colorpicker' && subElem.type !== 'textparagraph')
                 new UIWrappedText(subElem.description, true, null, false, false, 10)
                     .setX((this.SinGUI.element.subelem.description.padding).percent())
                     .setY(new CenterConstraint())
@@ -346,7 +347,7 @@ export default class Base {
             this._originalHeights.set(outerContainer, outerContainer.getHeight())
 
             const component = this._createComponent(subElem)
-            subElem.type === 'colorpicker' 
+            subElem.type === 'colorpicker' || subElem.type === 'textparagraph'
                 ? component.create() 
                     .setX((3).percent())
                     .setY(new CenterConstraint())
@@ -390,6 +391,7 @@ export default class Base {
             case "dropdown": return element.options[0]
             case "colorpicker": return [255, 255, 255, 255]
             case "keybind": return "NONE"
+            case "textparagraph":
             case "button": 
             default: return null 
         }
@@ -398,7 +400,7 @@ export default class Base {
     /**
      * @private
      * @param {object} subElem 
-     * @returns {SwitchElement|TextInputElement|SliderElement|DropdownElement|ColorPickerElement|KeybindElement|ButtonElement}
+     * @returns {SwitchElement|TextInputElement|SliderElement|DropdownElement|ColorPickerElement|TextParagraphElement|KeybindElement|ButtonElement}
      */
     _createComponent(subElem) {
         const currentValue = this.config[subElem.configName] ?? subElem.value
@@ -424,11 +426,12 @@ export default class Base {
                 this.activeDropdowns.push(dropdown)
                 return dropdown
             },
+            textparagraph: () => new TextParagraphElement(subElem.description, subElem.centered ?? true)
+                .setColorScheme(this.scheme),
             keybind: () => new KeybindElement(currentValue)
                 .setColorScheme(this.scheme)
                 .on('change', val => this.config[subElem.configName] = val)
         }
-
         return componentMap[subElem.type]()
     }
 
