@@ -89,7 +89,6 @@ export default class Config extends GUI {
         this.handler.registers.onClose(() => {
             this._onCloseGui.forEach(fn => fn())
             Keyboard.enableRepeatEvents(false)
-            this.listeners.clear()
             if (Client.getMinecraft().field_71474_y.field_74335_Z !== 2 || !this.GuiScale || this.GuiScale === 2) return
             Client.getMinecraft().field_71474_y.field_74335_Z = this.GuiScale
             this.GuiScale = null
