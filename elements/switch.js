@@ -1,5 +1,5 @@
 import BaseElement from "./base"
-import { UIRoundedRectangle, CenterConstraint, AspectConstraint, Animations, animate } from "../../Elementa"
+import { UIRoundedRectangle, CenterConstraint, ConstantColorConstraint, AspectConstraint, Animations, animate } from "../../Elementa"
 
 /**
  * Toggle switch element for boolean input
@@ -36,7 +36,10 @@ export default class SwitchElement extends BaseElement {
             this.isOn = !this.isOn
             handle.setColor(this.isOn ? this._getColor('switch.onColor') : this._getColor('switch.offColor'))
             this._trigger('change', this.isOn)
-            animate(handle, animation => animation.setXAnimation(Animations.OUT_EXP, 0.5, this.isOn ? (70).percent() : (3).percent()))
+            animate(handle, animation => {
+                animation.setXAnimation(Animations.OUT_EXP, 0.5, this.isOn ? (70).percent() : (3).percent())
+                animation.setColorAnimation(Animations.OUT_EXP, 0.5, new ConstantColorConstraint(this.isOn ? this._getColor('switch.onColor') : this._getColor('switch.offColor')))
+            })
         })
         return bg
     }
