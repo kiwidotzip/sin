@@ -335,7 +335,7 @@ export default class Config extends GUI {
     }
 
     /**
-     * Sets a setting value
+     * Sets a SinGUI setting value
      * @param {string} valueName
      * @param {value} newvalue
      * @returns this for chaining
