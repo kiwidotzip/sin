@@ -14,7 +14,7 @@ export default class Config extends Base {
      * @param {string} confPath
      */
     constructor(moduleName, schemePath, title, confPath) {
-        super();
+        super()
         this.title = title
         this.colorscheme = FileLib.read(moduleName, schemePath) || FileLib.read("sin", "data/_defaultScheme.json")
         this.moduleName = moduleName
@@ -234,9 +234,7 @@ export default class Config extends Base {
         )).filter(e => e.configName)
         
         const settings = {}
-        elements.forEach(e => {
-            settings[e.configName] = this.config[e.configName] ?? e.value ?? e.placeHolder ?? null
-        })
+        elements.forEach(e => settings[e.configName] = this.config[e.configName] ?? e.value ?? e.placeHolder ?? null)
         
         settings.getConfig = () => this
         settings.settings = settings
@@ -246,6 +244,22 @@ export default class Config extends Base {
             .forEach(k => settings[k] = this[k].bind(this))
         
         return settings
+    }
+
+    /**
+     * Returns the custom GUI instance
+     * @returns {CustomGui}
+     */
+    getGui() {
+        return this.handler.ctGui
+    }
+
+    /**
+     * Returns the handler instance
+     * @returns {HandleGui}
+     */
+    getHandler() {
+        return this.handler
     }
 
     /**
