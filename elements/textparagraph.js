@@ -1,4 +1,4 @@
-import { UIWrappedText, UIContainer, CenterConstraint } from "../../Elementa"
+import { UIWrappedText, UIContainer, CenterConstraint } from "../utils/elementa"
 import BaseElement from "./base"
 
 /**

@@ -1,6 +1,6 @@
 import BaseElement from "./base"
-import { UIRoundedRectangle, UIContainer, UIText, UITextInput, CenterConstraint } from "../../Elementa"
-import ElementUtils from "../../DocGuiLib/core/Element"
+import { UIRoundedRectangle, UIContainer, UIText, UITextInput, CenterConstraint } from "../utils/elementa"
+import ElementUtils from "../utils/color"
 
 /**
  * Color picker element with RGBA inputs and color preview

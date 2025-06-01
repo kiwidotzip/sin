@@ -3,5 +3,5 @@
     "author"        : "Kiwi",
     "description"   : "love cats - /ct import meowaddons",
     "version"       : "1.0.0",
-    "requires"      : ["Elementa", "DocGuiLib"]
+    "requires"      : ["DocGuiLib"]
 }

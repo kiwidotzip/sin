@@ -1,5 +1,5 @@
 import BaseElement from "./base"
-import { UIRoundedRectangle, UIText, CenterConstraint } from "../../Elementa"
+import { UIRoundedRectangle, UIText, CenterConstraint } from "../utils/elementa"
 
 /**
  * Keybind input element for capturing keyboard input

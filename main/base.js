@@ -1,7 +1,7 @@
 import HandleGui from "../../DocGuiLib/core/Gui"
 import HandleRegisters from "../../DocGuiLib/listeners/Registers"
 import GUI from './element'
-import { Window } from "../../Elementa"
+import { Window } from "../utils/elementa"
 import { CustomGui } from "../../DocGuiLib/core/CustomGui"
 
 /** @typedef {import('./elements').ElementConfig} ElementConfig */
