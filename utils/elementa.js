@@ -56,6 +56,10 @@ export const CenterConstraint = elementaPath.constraints.CenterConstraint
 /** @type {SubtractiveConstraint} */
 export const SubtractiveConstraint = elementaPath.constraints.SubtractiveConstraint
 
+/** @typedef {new (value: Float|1) => RelativeConstraint} RelativeConstraint */
+/** @type {RelativeConstraint} */
+export const RelativeConstraint = elementaPath.constraints.RelativeConstraint
+
 /** @typedef {new () => Animations} Animations */
 /** @type {Animations} */
 export const Animations = elementaPath.constraints.animation.Animations
@@ -70,4 +74,16 @@ export const animate = (component, callback) => {
     callback(anim)
     component.animateTo(anim)
     return component
+}
+
+Number.prototype.pixels = function (alignedOpposite = false, alignedOutside = false) {
+    return new PixelConstraint(this, alignedOpposite, alignedOutside)
+}
+
+Number.prototype.pixel = function (alignedOpposite = false, alignedOutside = false) {
+    return this.pixels(alignedOpposite, alignedOutside);
+}
+  
+Number.prototype.percent = function () {
+    return new RelativeConstraint(this / 100)
 }
