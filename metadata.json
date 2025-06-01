@@ -2,6 +2,5 @@
     "name"          : "sin",
     "author"        : "Kiwi",
     "description"   : "love cats - /ct import meowaddons",
-    "version"       : "1.0.0",
-    "requires"      : ["DocGuiLib"]
+    "version"       : "1.0.0"
 }

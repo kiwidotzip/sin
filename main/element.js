@@ -7,7 +7,7 @@ import ButtonElement from "../elements/button"
 import ColorPickerElement from "../elements/colorpicker"
 import TextParagraphElement from "../elements/textparagraph"
 import { UIRoundedRectangle, UIText, UIWrappedText, CenterConstraint, CramSiblingConstraint, ChildBasedSizeConstraint, PixelConstraint, ScrollComponent, animate, Animations, ConstantColorConstraint } from "../utils/elementa"
-import ElementUtils from "../../DocGuiLib/core/Element"
+import ElementUtils from "../utils/color"
 
 export default class GUI {
     /**

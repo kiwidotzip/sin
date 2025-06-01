@@ -1,8 +1,8 @@
-import HandleGui from "../../DocGuiLib/core/Gui"
-import HandleRegisters from "../../DocGuiLib/listeners/Registers"
+import HandleGui from "../utils/HandleGui"
+import CustomGui from "../utils/customGUI"
+import HandleRegisters from "../utils/registers"
 import GUI from './element'
 import { Window } from "../utils/elementa"
-import { CustomGui } from "../../DocGuiLib/core/CustomGui"
 
 /** @typedef {import('./elements').ElementConfig} ElementConfig */
 /** @typedef {'button'|'switch'|'textinput'|'slider'|'dropdown'|'colorpicker'|'textparagraph'|'keybind'} ElementType */
@@ -69,12 +69,6 @@ export default class Config extends GUI {
         this.handler.ctGui = new CustomGui()
         this.handler.window = new Window()
         this.handler.registers = new HandleRegisters(this.handler.ctGui, this.handler.window)
-        const regs = this.handler.registers
-        regs._stop = () => {
-            if (regs.isCustom) return
-            for (const ev of regs.eventsList) (ev && typeof ev.unregister === "function") && ev.unregister()
-            regs.eventsList.clear()
-        }
         this.handler.ctGui.registerInit(() => Keyboard.enableRepeatEvents(true))
         this.handler.registers.onOpen(() => {
             this._onOpenGui.forEach(fn => fn())
@@ -91,7 +85,7 @@ export default class Config extends GUI {
         })
     }
 
-        /** @private */
+    /** @private */
     _loadConfig() {
         if (!this.configPath) return
 

@@ -8,7 +8,7 @@ export const UIText = elementaPath.components.UIText
 /** @type {UIWrappedText} */
 export const UIWrappedText = elementaPath.components.UIWrappedText
 
-/** @typedef {new (placeholder: string|"", shadow: boolean|true, selectionBackgroundColor: Color|Color.WHITE, selectionForegroundColor: Color|Color(64, 139, 229), allowInactiveSelection: boolean|false, inactiveSelectionBackgroundColor: Color|Color(176, 176, 176), inactiveSelectionForegroundColor: Color|Color.WHITE, cursorColor: Color|Color.WHITE) => UITextInput} UITextInput */
+/** @typedef {new (placeholder: string|"", shadow: boolean|true, selectionBackgroundColor: Color|Color.WHITE, selectionForegroundColor: Color, allowInactiveSelection: boolean|false, inactiveSelectionBackgroundColor: Color, inactiveSelectionForegroundColor: Color|Color.WHITE, cursorColor: Color|Color.WHITE) => UITextInput} UITextInput */
 /** @type {UITextInput} */
 export const UITextInput = elementaPath.components.input.UITextInput
 
