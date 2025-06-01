@@ -56,7 +56,6 @@ export const CenterConstraint = elementaPath.constraints.CenterConstraint
 /** @type {SubtractiveConstraint} */
 export const SubtractiveConstraint = elementaPath.constraints.SubtractiveConstraint
 
-
 /** @typedef {new () => Animations} Animations */
 /** @type {Animations} */
 export const Animations = elementaPath.constraints.animation.Animations
