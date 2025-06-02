@@ -4,6 +4,9 @@ import HandleRegisters from "../utils/registers"
 import GUI from './element'
 import { Window } from "../utils/elementa"
 
+const ResourceLocation = Java.type('net.minecraft.util.ResourceLocation')
+const blur = new ResourceLocation("shaders/post/blur.json")
+
 /** @typedef {import('./elements').ElementConfig} ElementConfig */
 /** @typedef {'button'|'switch'|'textinput'|'slider'|'dropdown'|'colorpicker'|'textparagraph'|'keybind'} ElementType */
 export default class Config extends GUI {
@@ -24,6 +27,7 @@ export default class Config extends GUI {
         this.categories = []
         this.config = confPath ? JSON.parse(FileLib.read(moduleName, confPath) || "{}") : {}
         this._initHandler()
+        this.blur = false
         this.SinGUI = {
             background: {
                 width: 65,
@@ -72,6 +76,8 @@ export default class Config extends GUI {
         this.handler.ctGui.registerInit(() => Keyboard.enableRepeatEvents(true))
         this.handler.registers.onOpen(() => {
             this._onOpenGui.forEach(fn => fn())
+            this.blur && Client.getMinecraft().field_71460_t.func_181022_b()
+            this.blur && Client.getMinecraft().field_71460_t.func_175069_a(blur)
             if (Client.getMinecraft().field_71474_y.field_74335_Z === 2) return
             this.GuiScale = Client.getMinecraft().field_71474_y.field_74335_Z
             Client.getMinecraft().field_71474_y.field_74335_Z = 2
@@ -79,6 +85,7 @@ export default class Config extends GUI {
         this.handler.registers.onClose(() => {
             this._onCloseGui.forEach(fn => fn())
             Keyboard.enableRepeatEvents(false)
+            this.blur && Client.getMinecraft().field_71460_t.func_181022_b()
             if (Client.getMinecraft().field_71474_y.field_74335_Z !== 2 || !this.GuiScale || this.GuiScale === 2) return
             Client.getMinecraft().field_71474_y.field_74335_Z = this.GuiScale
             this.GuiScale = null
@@ -280,8 +287,7 @@ export default class Config extends GUI {
      * @returns this for chaining
      */
     closeGui() {
-        this.handler.ctGui.close()
-        return this
+        return this.handler.ctGui.close(), this
     }
 
     /**
@@ -290,8 +296,7 @@ export default class Config extends GUI {
      * @returns this for chaining
      */
     onOpenGui(fn) {
-        this._onOpenGui.push(fn)
-        return this
+        return this._onOpenGui.push(fn), this
     }
 
     /**
@@ -300,8 +305,7 @@ export default class Config extends GUI {
      * @returns this for chaining
      */
     onCloseGui(fn) {
-        this._onCloseGui.push(fn)
-        return this
+        return this._onCloseGui.push(fn), this
     }
 
     /**
@@ -311,9 +315,7 @@ export default class Config extends GUI {
      * @returns this for chaining
      */
     setSize(width, height) {
-        width && (this.SinGUI.background.width = width)
-        height && (this.SinGUI.background.height = height)
-        return this
+        return width && (this.SinGUI.background.width = width), height && (this.SinGUI.background.height = height), this
     }
 
     /**
@@ -323,9 +325,7 @@ export default class Config extends GUI {
      * @returns this for chaining
      */
     setRatio(left, right) {
-        left && (this.SinGUI.background.leftRatio = left)
-        right && (this.SinGUI.background.rightRatio = right)
-        return this
+        return left && (this.SinGUI.background.leftRatio = left), right && (this.SinGUI.background.rightRatio = right), this
     }
 
     /**
@@ -335,7 +335,7 @@ export default class Config extends GUI {
      * @returns this for chaining
      */
     setValue(valueName, newvalue) {
-        valueName && newvalue && (this.SinGUI[valueName] = newvalue)
+        return valueName && newvalue && (this.SinGUI[valueName] = newvalue), this
     }
 
     /**
@@ -345,8 +345,16 @@ export default class Config extends GUI {
      * @returns this for chaining
      */
     setConfigValue(key, newVal) {
-        this._updateConfig(key, newVal)
-        return this
+        return this._updateConfig(key, newVal), this
+    }
+
+    /**
+     * Enables or disables the blur effect
+     * @param {boolean} blur
+     * @returns this for chaining
+     */
+    setBlur(blur) {
+        return this.blur = blur, this
     }
 }
 
