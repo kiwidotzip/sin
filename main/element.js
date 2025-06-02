@@ -343,10 +343,6 @@ export default class GUI {
                     .setColor(ElementUtils.getJavaColor(this.SinGUI.element.subelem.description.color))
                     .setChildOf(card)
 
-            this._subElements.set(subElem.configName, { container: outerContainer, shouldShow: subElem.shouldShow })
-            this._updateElementVisibility(subElem.configName)
-            this._originalHeights.set(outerContainer, outerContainer.getHeight())
-
             const component = this._createComponent(subElem)
             subElem.type === 'colorpicker' || subElem.type === 'textparagraph'
                 ? component.create() 
@@ -359,6 +355,9 @@ export default class GUI {
                     .setWidth((this.SinGUI.element.subelem.width).pixels())
                     .setHeight((this.SinGUI.element.subelem.height).pixels())
                     .setChildOf(card)
+            this._subElements.set(subElem.configName, { container: outerContainer, shouldShow: subElem.shouldShow, subElem: subElem, component: component })
+            this._updateElementVisibility(subElem.configName)
+            this._originalHeights.set(outerContainer, outerContainer.getHeight())
             previousElement = outerContainer
         })
     }
@@ -368,15 +367,29 @@ export default class GUI {
      * @param {string} configName
      */
     _updateElementVisibility(configName) {
-        const { container, shouldShow } = this._subElements.get(configName) || {}
+        const { container, shouldShow, subElem, component } = this._subElements.get(configName) || {}
         if (!container) return
         const visible = !shouldShow || shouldShow(this.config)
         const originalHeight = this._originalHeights.get(container) || 50
 
+        if (!visible && (subElem.type === 'switch' || subElem.type === 'dropdown')) 
+            this._silly(configName, this._getDefaultValue(subElem))
+        !visible && subElem.type === 'switch' && component.setValue(this._getDefaultValue(subElem), true)
         visible
-            ? container && container.setHeight(originalHeight.pixels()).unhide(true)
-            : container && container.setHeight((0).pixels()).hide(true)
+            ? container.setHeight(originalHeight.pixels()).unhide(true)
+            : container.setHeight((0).pixels()).hide(true)
         this.currentContent?.getParent()?.onWindowResize()
+    }
+
+    /**
+     * @private
+     * @param {string} key 
+     * @param {any} val 
+     */
+    _silly(key, val) {  
+        const oldV = this.config[key]
+        this.config[key] = val
+        this.listeners.forEach((meta, handler) => meta.any ? handler(oldV, val, key) : handler(key, oldV, val))
     }
     
     /**
@@ -389,7 +402,7 @@ export default class GUI {
             case "switch": return false
             case "textinput": return element.placeHolder ?? ""
             case "slider": return element.options[0]
-            case "dropdown": return element.options[0]
+            case "dropdown": return 0
             case "colorpicker": return [255, 255, 255, 255]
             case "keybind": return "NONE"
             case "textparagraph":

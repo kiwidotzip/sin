@@ -22,25 +22,32 @@ export default class SwitchElement extends BaseElement {
      * @returns {UIRoundedRectangle} The main switch background component
      */
     create() {
-        const bg = new UIRoundedRectangle(this._getValue('base.roundness'))
+        this.bg = new UIRoundedRectangle(this._getValue('base.roundness'))
             .setColor(this._getColor('switch.handle'))
-        const handle = new UIRoundedRectangle(this._getValue('base.roundness'))
+        
+        this.handle = new UIRoundedRectangle(this._getValue('base.roundness'))
             .setX(this.isOn ? (70).percent() : (3).percent())
             .setY(new CenterConstraint())
             .setWidth(new AspectConstraint(1))
             .setHeight((80).percent())
             .setColor(this.isOn ? this._getColor('switch.onColor') : this._getColor('switch.offColor'))
-            .setChildOf(bg)
+            .setChildOf(this.bg)
         
-        bg.onMouseClick(() => {
-            this.isOn = !this.isOn
-            handle.setColor(this.isOn ? this._getColor('switch.onColor') : this._getColor('switch.offColor'))
-            this._trigger('change', this.isOn)
-            animate(handle, animation => {
-                animation.setXAnimation(Animations.OUT_EXP, 0.5, this.isOn ? (70).percent() : (3).percent())
-                animation.setColorAnimation(Animations.OUT_EXP, 0.5, new ConstantColorConstraint(this.isOn ? this._getColor('switch.onColor') : this._getColor('switch.offColor')))
-            })
+        this.bg.onMouseClick(() => this.toggle())
+        return this.bg
+    }
+
+    setValue(value, skipAni = false) {
+        this.isOn = value
+        if (skipAni) return this.handle.setX(this.isOn ? (70).percent() : (3).percent()).setColor(this.isOn ? this._getColor('switch.onColor') : this._getColor('switch.offColor'))
+        animate(this.handle, animation => {
+            animation.setXAnimation(Animations.OUT_EXP, 0.5, this.isOn ? (70).percent() : (3).percent())
+            animation.setColorAnimation(Animations.OUT_EXP, 0.5, new ConstantColorConstraint(this.isOn ? this._getColor('switch.onColor') : this._getColor('switch.offColor')))
         })
-        return bg
+    }
+
+    toggle() {
+        this.setValue(!this.isOn)
+        this._trigger('change', this.isOn)
     }
 }
