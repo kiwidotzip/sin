@@ -371,10 +371,10 @@ export default class GUI {
         if (!container) return
         const visible = !shouldShow || shouldShow(this.config)
         const originalHeight = this._originalHeights.get(container) || 50
-
+        const newVal = subElem.value ?? this._getDefaultValue(subElem)
         if (!visible && (subElem.type === 'switch' || subElem.type === 'dropdown')) 
-            this._silly(configName, this._getDefaultValue(subElem))
-        !visible && subElem.type === 'switch' && component.setValue(this._getDefaultValue(subElem), true)
+            this._silly(configName, newVal)
+        !visible && subElem.type === 'switch' && component.setValue(newVal, true)
         visible
             ? container.setHeight(originalHeight.pixels()).unhide(true)
             : container.setHeight((0).pixels()).hide(true)
@@ -386,7 +386,8 @@ export default class GUI {
      * @param {string} key 
      * @param {any} val 
      */
-    _silly(key, val) {  
+    _silly(key, val) {
+        if (this.config[key] === val) return
         const oldV = this.config[key]
         this.config[key] = val
         this.listeners.forEach((meta, handler) => meta.any ? handler(oldV, val, key) : handler(key, oldV, val))
