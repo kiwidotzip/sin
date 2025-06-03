@@ -121,7 +121,6 @@ export default class Config extends GUI {
                         }))
                 ))
             }))
-            
             FileLib.write(this.moduleName, this.configPath, JSON.stringify(data, null, 4))
         } catch(e) {
             ChatLib.chat(`&b[SIN] &fFailed to save config for &c${this.moduleName}&f: &c${e}`)
@@ -157,7 +156,7 @@ export default class Config extends GUI {
      * @param {string} [config.description]
      * @param {function} [config.onClick]
      * @param {function} [config.shouldShow]
-     * @returns {Config}
+     * @returns {Config} The config instance
      */
     addButton(config) {
         return this._addElement('button', config)
@@ -297,34 +296,23 @@ export default class Config extends GUI {
     }
 
     /**
-     * Returns a settings object with all config keys (using defaults/placeholders if unset),
+     * Returns a settings object with all config keys,
      * a .getConfig() method, a .settings property, and all instance methods attached.
-     * @returns {object} Settings object for this config
+     * @typedef {Object} Settings
+     * @property {function(): Config} getConfig
+     * @property {Object<string, any>} settings
+     * @returns {Settings & Config} Settings object for this config
      */
-    getSettings() {
-        const elements = [].concat(...this.categories.map(cat => 
-            [].concat(...cat.elements.map(sub => sub.subElements))
-        )).filter(e => e.configName)
+    get settings() {
+        const settingsObj = [].concat(...this.categories.map(c => [].concat(...c.elements.map(s => s.subElements))))
+        .filter(e => e.configName)
+        .reduce((acc, e) => (acc[e.configName] = this.config[e.configName] ?? e.value ?? e.placeHolder ?? null, acc), {})
         
-        const settings = {}
-        elements.forEach(e => settings[e.configName] = this.config[e.configName] ?? e.value ?? e.placeHolder ?? null)
-        
-        settings.getConfig = () => this
-        settings.settings = settings
-        
-        Object.getOwnPropertyNames(Object.getPrototypeOf(this))
-            .filter(k => typeof this[k] === "function" && k !== "constructor")
-            .forEach(k => settings[k] = this[k].bind(this))
-        
-        return settings
-    }
-
-    /**
-     * Returns the custom GUI instance
-     * @returns {CustomGui}
-     */
-    getGui() {
-        return this.handler.ctGui
+        return /** @type {Settings & Config} */ ({ 
+            ...settingsObj, 
+            getConfig: () => this,
+            settings: settingsObj
+        })
     }
 
     /**
