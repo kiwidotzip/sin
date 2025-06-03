@@ -299,8 +299,8 @@ export default class Config extends GUI {
      * Returns a settings object with all config keys,
      * a .getConfig() method, a .settings property, and all instance methods attached.
      * @typedef {Object} Settings
-     * @property {function(): Config} getConfig
-     * @property {Object<string, any>} settings
+     * @property {function(): Config} getConfig - Returns the config instance
+     * @property {Object<string, any>} settings - Returns all config keys and their values
      * @returns {Settings & Config} Settings object for this config
      */
     get settings() {
@@ -309,7 +309,7 @@ export default class Config extends GUI {
         .reduce((acc, e) => (acc[e.configName] = this.config[e.configName] ?? e.value ?? e.placeHolder ?? null, acc), {})
         
         return /** @type {Settings & Config} */ ({ 
-            ...settingsObj, 
+            ...settingsObj,
             getConfig: () => this,
             settings: settingsObj
         })
