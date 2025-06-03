@@ -7,21 +7,6 @@ import { Window } from "../utils/elementa"
 const ResourceLocation = Java.type('net.minecraft.util.ResourceLocation')
 const blur = new ResourceLocation("shaders/post/blur.json")
 
-/** 
- * @typedef {Object} ElementConfig
- * @property {string} category - Category name
- * @property {string} subcategory - Subcategory name
- * @property {string} configName - Config property name
- * @property {string} [title] - Display title
- * @property {string} [description] - Description text
- * @property {any} [value] - Default value
- * @property {string} [placeHolder] - Placeholder text
- * @property {Array<any>} [options] - Options for dropdown/slider
- * @property {function} [shouldShow] - Visibility conditional
- * @property {function} [onClick] - Click handler for buttons
- * @property {boolean} [centered] - Text alignment
- * @property {function(this: Config, any, any): void} [registerListener] - Custom listener
- */
 export default class Config extends GUI {
     /**
      * @param {string} moduleName The name of the module
@@ -163,67 +148,132 @@ export default class Config extends GUI {
         this.listeners.forEach((meta, handler) => meta.any ? handler(oldVal, newVal, key) : handler(key, oldVal, newVal))
     }
 
-    /** 
-     * @param {ElementConfig} config 
-     * @returns this for chaining
-     */ 
+    /**
+     * @param {Object} config
+     * @param {string} config.category
+     * @param {string} config.subcategory
+     * @param {string} config.configName
+     * @param {string} [config.title]
+     * @param {string} [config.description]
+     * @param {function} [config.onClick]
+     * @param {function} [config.shouldShow]
+     * @returns {Config}
+     */
     addButton(config) {
         return this._addElement('button', config)
     }
 
-    /** 
-     * @param {ElementConfig} config 
-     * @returns this for chaining
-     */ 
+    /**
+     * @param {Object} config
+     * @param {string} config.category
+     * @param {string} config.subcategory
+     * @param {string} config.configName
+     * @param {string} [config.title]
+     * @param {string} [config.description]
+     * @param {boolean} [config.value = false]
+     * @param {function} [config.shouldShow]
+     * @param {function} [config.registerListener]
+     * @returns {Config} The config instance
+     */
     addSwitch(config) {
         return this._addElement('switch', config)
     }
     
-    /** 
-     * @param {ElementConfig} config 
-     * @returns this for chaining
-     */ 
+    /**
+     * @param {Object} config
+     * @param {string} config.category
+     * @param {string} config.subcategory
+     * @param {string} config.configName
+     * @param {string} [config.title]
+     * @param {string} [config.description]
+     * @param {string} [config.value]
+     * @param {string} [config.placeHolder]
+     * @param {function} [config.shouldShow]
+     * @param {function} [config.registerListener]
+     * @returns {Config} The config instance
+     */
     addTextInput(config) {
         return this._addElement('textinput', config)
     }
 
-    /** 
-     * @param {ElementConfig} config 
-     * @returns this for chaining
-     */ 
+    /**
+     * @param {Object} config
+     * @param {string} config.category
+     * @param {string} config.subcategory
+     * @param {string} config.configName
+     * @param {string} [config.title]
+     * @param {string} [config.description]
+     * @param {number} [config.min = 0]
+     * @param {number} [config.max = 100]
+     * @param {number} [config.value = 50]
+     * @param {function} [config.shouldShow]
+     * @param {function} [config.registerListener]
+     * @returns {Config} The config instance
+     */
     addSlider(config) {
         return this._addElement('slider', config)
     }
 
-    /** 
-     * @param {ElementConfig} config 
-     * @returns this for chaining
-     */ 
+    /**
+     * @param {Object} config
+     * @param {string} config.category
+     * @param {string} config.subcategory
+     * @param {string} config.configName
+     * @param {string} [config.title]
+     * @param {string} [config.description]
+     * @param {Array<string>} config.options
+     * @param {number} [config.value]
+     * @param {function} [config.shouldShow]
+     * @param {function} [config.registerListener]
+     * @returns {Config} The config instance
+     */
     addDropDown(config) {
         return this._addElement('dropdown', config)
     }
 
-    /** 
-     * @param {ElementConfig} config 
-     * @returns this for chaining
-     */ 
+    /**
+     * @param {Object} config
+     * @param {string} config.category
+     * @param {string} config.subcategory
+     * @param {string} config.configName
+     * @param {string} [config.title]
+     * @param {string} [config.description]
+     * @param {string} [config.value]
+     * @param {function} [config.shouldShow]
+     * @param {function} [config.registerListener]
+     * @returns {Config} The config instance
+     */
     addColorPicker(config) {
         return this._addElement('colorpicker', config)
     }
-    
 
     /**
-     * @param {ElementConfig} config 
-     * @returns this for chaining
+     * @param {Object} config
+     * @param {string} config.category
+     * @param {string} config.subcategory
+     * @param {string} config.configName
+     * @param {string} [config.title]
+     * @param {string} config.description
+     * @param {boolean} [config.centered=true]
+     * @param {function} [config.shouldShow]
+     * @returns {Config} The config instance
      */
     addTextParagraph(config) {
         return this._addElement('textparagraph', config)
     }
 
-    /** 
-     * @param {ElementConfig} config 
-     * @returns this for chaining
-     */ 
+    /**
+     * @param {Object} config
+     * @param {string} config.category
+     * @param {string} config.subcategory
+     * @param {string} config.configName
+     * @param {string} [config.title]
+     * @param {string} [config.description]
+     * @param {number} [config.value]
+     * @param {function} [config.shouldShow]
+     * @param {function} [config.registerListener]
+     * @returns {Config} The config instance
+     */
     addKeybind(config) {
         return this._addElement('keybind', config)
     }

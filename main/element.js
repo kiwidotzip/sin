@@ -9,10 +9,6 @@ import TextParagraphElement from "../elements/textparagraph"
 import { UIRoundedRectangle, UIText, UIWrappedText, CenterConstraint, CramSiblingConstraint, ChildBasedSizeConstraint, PixelConstraint, ScrollComponent, animate, Animations, ConstantColorConstraint } from "../utils/elementa"
 import ElementUtils from "../utils/color"
 
-/** 
- * @typedef {import('./base').ElementConfig} ElementConfig
- * @typedef {'button'|'switch'|'textinput'|'slider'|'dropdown'|'colorpicker'|'textparagraph'|'keybind'} ElementType
- */
 export default class GUI {
     /**
      * @private
@@ -437,7 +433,8 @@ export default class GUI {
                 .setColorScheme(this.scheme)
                 .on('change', val => this._updateConfig(subElem.configName, val)),
             colorpicker: () => new ColorPickerElement(currentValue, this.rightBlock)
-                .setColorScheme(this.scheme),
+                .setColorScheme(this.scheme)
+                .on('change', val => this._updateConfig(subElem.configName, val)),
             dropdown: () => {
                 const dropdown = new DropdownElement(subElem.options, currentValue)
                     .setColorScheme(this.scheme)
