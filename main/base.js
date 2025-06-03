@@ -7,8 +7,21 @@ import { Window } from "../utils/elementa"
 const ResourceLocation = Java.type('net.minecraft.util.ResourceLocation')
 const blur = new ResourceLocation("shaders/post/blur.json")
 
-/** @typedef {import('./elements').ElementConfig} ElementConfig */
-/** @typedef {'button'|'switch'|'textinput'|'slider'|'dropdown'|'colorpicker'|'textparagraph'|'keybind'} ElementType */
+/** 
+ * @typedef {Object} ElementConfig
+ * @property {string} category - Category name
+ * @property {string} subcategory - Subcategory name
+ * @property {string} configName - Config property name
+ * @property {string} [title] - Display title
+ * @property {string} [description] - Description text
+ * @property {any} [value] - Default value
+ * @property {string} [placeHolder] - Placeholder text
+ * @property {Array<any>} [options] - Options for dropdown/slider
+ * @property {function} [shouldShow] - Visibility conditional
+ * @property {function} [onClick] - Click handler for buttons
+ * @property {boolean} [centered] - Text alignment
+ * @property {function(this: Config, any, any): void} [registerListener] - Custom listener
+ */
 export default class Config extends GUI {
     /**
      * @param {string} moduleName The name of the module

@@ -9,6 +9,10 @@ import TextParagraphElement from "../elements/textparagraph"
 import { UIRoundedRectangle, UIText, UIWrappedText, CenterConstraint, CramSiblingConstraint, ChildBasedSizeConstraint, PixelConstraint, ScrollComponent, animate, Animations, ConstantColorConstraint } from "../utils/elementa"
 import ElementUtils from "../utils/color"
 
+/** 
+ * @typedef {import('./base').ElementConfig} ElementConfig
+ * @typedef {'button'|'switch'|'textinput'|'slider'|'dropdown'|'colorpicker'|'textparagraph'|'keybind'} ElementType
+ */
 export default class GUI {
     /**
      * @private
