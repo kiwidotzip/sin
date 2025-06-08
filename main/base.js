@@ -202,8 +202,7 @@ export default class Config extends GUI {
      * @param {string} config.configName
      * @param {string} [config.title]
      * @param {string} [config.description]
-     * @param {number} [config.min = 0]
-     * @param {number} [config.max = 100]
+     * @param {Array} [config.options]
      * @param {number} [config.value = 50]
      * @param {function} [config.shouldShow]
      * @param {function} [config.registerListener]
